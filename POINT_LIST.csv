@@ -1,0 +1,13 @@
+Point Identifier,System Name,Description,Building,Floor,Room/Location,Type of Measurement,Units,Sensor Type(s)
+Point_1,MHL1-017.IC,Outdoor Temperature Sensor of EV weather station,EV,17M,Rooftop Weather Station,Solar Irradiance,W/m2,Pyrometer
+Point_2,MHX1-017.IC,Outdoor Humidity Sensor of EV weather station,EV,17M,Rooftop Weather Station,Relative Humidity,% Relative Humidity,Ceramic - heated
+Point_3,MTX1-017.IC,Outdoor Temperature Sensor of EV weather station,EV,17M,Rooftop Weather Station,Air Temperature ,DegC,RTD 
+Point_4,MVD1-017.IC,Wind Direction Sensor of EV weather station,EV,17M,Rooftop Weather Station,Wind Direction,Degrees from North,Ultrasonic
+Point_5,MVV1-017.IC,Wind Speed Sensor of EV weather station,EV,17M,Rooftop Weather Station,Wind Speed,m/s,Ultrasonic
+Point_6,TOTKWEV-MB.IC,"Electrical demand of the EV, GM, MB and TD buildings",EV,S2,Transformer Room,Electrical Power,kW,Voltage and Current Transducers
+Point_7,TOTKWEV.IC,Electrical demand of the EV building,EV,S2,Transformer Room,Electrical Power,kW,Voltage and Current Transducers
+Point_8,MDI.001-650.IC,"Gas Consumption of the EV, GM and MB buildings",EV,RC,Gas Entry Room,Natural Gas Volume,"m3 (monthly,cummulative)",Gas Turbine
+Point_9,MDICOR.GM,Gas Consumption of the GM building,GM,S1,Garage Crawlspace,Natural Gas Volume,"m3 (monthly,cummulative)",Gas Turbine
+Point_10,MDE.EFDP.IC,Municipal water supply meter,EV,S1,Water Entry Room,Water Flow,"m3 (monthly,cummulative)",Turbine type flow meter
+Point_11,MTXLOY,Outdoor Temperature Sensor of the SP,SP,Roof,Rooftop Weather Station,Air Temperature ,DegC,RTD 
+Point_12,DEMANDE.ELEC.MOYEN60S.BS,Electrical demand of Loyola Campus,SP,S1,Tranformer Room,Electrical Power,kW,Voltage and Current Transducers

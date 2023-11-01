@@ -1,0 +1,11 @@
+Waste_Type,Description
+Organics,"Food waste, compostable paper products, compostable bioplastics, and green waste sent to composting."
+Paper,"Paper and cardboard sent for recycling."
+Mixed_recycling,"Plastic, metal, coated paper, and glass containers sent for recycling."
+Landfill,"Bagged waste disposed of in trash bins around campus and sent to landfill. Ideally consists of non-recyclable and compostable materials. Poor sorting practices can lead to such materials being sent to landfill."
+Reuse,"Materials reused on or off campus. Can include reused furniture, materials salvaged at the Centre for Creative Reuse, or donated computers."
+Battery,"Batteries sent for recycling."
+E-waste,"Computers and other electronic devices sent for recycling."
+Fluorescents,"Fluorescent bulbs sent for recycling."
+Food_donations,"Collected and donated leftover food."
+Bulky_waste,"Bulky scrap waste sent for recycling and landfill. Proportion of materials sent for recycling and landfill uknown. Typically consists of furniture, construction, and renovation waste."
