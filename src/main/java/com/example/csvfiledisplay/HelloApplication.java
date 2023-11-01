@@ -1,6 +1,12 @@
 package com.example.csvfiledisplay;
 
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -11,12 +17,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 
 public class HelloApplication extends Application {
@@ -40,7 +40,7 @@ public class HelloApplication extends Application {
 
 
     }
-
+    private int[] maxes;
     private final TableView<Record> tableView = new TableView<>();
 
     private final ObservableList<Record> dataList
@@ -56,7 +56,8 @@ public class HelloApplication extends Application {
             int index = i + 1;
             columns[i] = new TableColumn<>("f" + index);
             columns[i].setCellValueFactory(data -> data.getValue().getFieldProperty("f" + index));
-            columns[i].setPrefWidth(300);
+            columns[i].setStyle("-fx-font-size: 10;");
+            columns[i].setPrefWidth(Math.min(maxes[i]*5.66,1650/numberOfColumns));
         }
         tableView.setItems(dataList);
         for (var i: columns)
@@ -68,16 +69,16 @@ public class HelloApplication extends Application {
 
         root.getChildren().add(vBox);
 
-        primaryStage.setScene(new Scene(root, 1120, 850));
+        primaryStage.setScene(new Scene(root, 1000, 750));
         primaryStage.show();
 
     }
     public void readCSV(String fileName) throws IOException {
         String FieldDelimiter = ",";
-
         BufferedReader br;
         br = new BufferedReader(new FileReader(fileName));
         numberOfColumns = br.readLine().split(FieldDelimiter, -1).length;
+        maxes=new int[numberOfColumns];
         br.close();
         br = new BufferedReader(new FileReader(fileName));
         String line;
@@ -86,6 +87,7 @@ public class HelloApplication extends Application {
             String[] names = new String[numberOfColumns];
             for (int n = 0; n < numberOfColumns; n++) {
                 names[n] = "f" + (n + 1);
+                maxes[n]=Math.max(fields[n].length(),maxes[n]);
             }
             HelloApplication.Record record = new HelloApplication.Record(names, fields);
             dataList.add(record);
