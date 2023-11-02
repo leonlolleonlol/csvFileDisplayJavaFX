@@ -4,6 +4,8 @@ package com.example.csvfiledisplay;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import javafx.application.Application;
@@ -64,14 +66,14 @@ public class HelloApplication extends Application {
     public void readCSV(String fileName) throws IOException {
         String FieldDelimiter = ",";
         BufferedReader br;
-        int numberOfColumnsRemoved=0;
+        var columnIndexRemoved=new ArrayList<Integer>();
         br = new BufferedReader(new FileReader(fileName));
         String header[];
         header = br.readLine().split(FieldDelimiter, -1);
         for(int i=0;i<header.length;i++)
             if(i!=header.length-1&&header[i].isEmpty())
-                numberOfColumnsRemoved++;
-        numberOfColumns=header.length-numberOfColumnsRemoved;
+                columnIndexRemoved.add(i);
+        numberOfColumns=header.length-columnIndexRemoved.size();
         maxes=new int[numberOfColumns];
         br.close();
         br = new BufferedReader(new FileReader(fileName));
@@ -80,31 +82,29 @@ public class HelloApplication extends Application {
         while ((line = br.readLine()) != null) {
             String[] fields = line.split(FieldDelimiter, numberOfColumns);
             ArrayList<String> realFields = new ArrayList<String>();
-            String[] names = new String[numberOfColumns];
+            ArrayList<String> names = new ArrayList<String>();
             for (int n = 0; n < numberOfColumns; n++) {
-                names[n] = "f" + (n + 1);
+                names.add( "f" + (n + 1));
                 maxes[n]=Math.max(fields[n].length(),maxes[n]);
                 fields[n]=fields[n].isEmpty()?"-":fields[n];
-                if(lineNumber!=0&&fields[n].length()==1&&!fields[n].matches("^(?:\r\n" + //
-                        "[\\x09\\x0A\\x0D\\x20-\\x7E]              # ASCII\r\n" + //
-                        "| [\\xC2-\\xDF][\\x80-\\xBF]             # non-overlong 2-byte\r\n" + //
-                        "| \\xE0[\\xA0-\\xBF][\\x80-\\xBF]         # excluding overlongs\r\n" + //
-                        "| [\\xE1-\\xEC\\xEE\\xEF][\\x80-\\xBF]{2}  # straight 3-byte\r\n" + //
-                        "| \\xED[\\x80-\\x9F][\\x80-\\xBF]         # excluding surrogates\r\n" + //
-                        "| \\xF0[\\x90-\\xBF][\\x80-\\xBF]{2}      # planes 1-3\r\n" + //
-                        "| [\\xF1-\\xF3][\\x80-\\xBF]{3}          # planes 4-15\r\n" + //
-                        "| \\xF4[\\x80-\\x8F][\\x80-\\xBF]{2}      # plane 16\r\n" + //
-                        ")*$\r\n" + //
-                        ""))
-                    fields[n]="-";
+                if(lineNumber!=0&&fields[n].length()==1)
+                {
+                    ByteBuffer buffer = StandardCharsets.UTF_8.encode(String.valueOf(fields[n].charAt(0)));
+                    String utf8EncodedString = StandardCharsets.UTF_8.decode(buffer).toString();
+                    if(utf8EncodedString.charAt(0)==',')
+                        fields[n]="-";
+                }
                 realFields.add(fields[n]);
             }
             realFields=checkForErrors(fields,realFields);
-            String []finalFields = realFields.toArray(new String[realFields.size()]);
-            Record record = new Record(names, finalFields);
+            Record record = new Record(transformArrayListToArray(names), transformArrayListToArray(realFields));
             dataList.add(record);
             lineNumber++;
         }
+    }
+    public String[] transformArrayListToArray(ArrayList <String> a)
+    {
+        return a.toArray(new String[a.size()]);
     }
         public ArrayList<String> checkForErrors(String [] fields,ArrayList<String> realFields)
         {
