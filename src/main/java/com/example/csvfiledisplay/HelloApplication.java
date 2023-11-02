@@ -4,6 +4,7 @@ package com.example.csvfiledisplay;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
@@ -51,7 +52,7 @@ public class HelloApplication extends Application {
         for(int i:maxes)
             desiredWidth+=i;
         desiredWidth*=5.66;
-        tableView.setMinSize( desiredWidth-25, primaryStage.getHeight());
+        tableView.setMinSize( desiredWidth, primaryStage.getHeight());
         vBox.getChildren().add(tableView);
         vBox.setMinWidth(desiredWidth*0.9);
         //vBox.setFillWidth(true);
@@ -63,40 +64,64 @@ public class HelloApplication extends Application {
     public void readCSV(String fileName) throws IOException {
         String FieldDelimiter = ",";
         BufferedReader br;
+        int numberOfColumnsRemoved=0;
         br = new BufferedReader(new FileReader(fileName));
-        numberOfColumns = br.readLine().split(FieldDelimiter, -1).length;
+        String header[];
+        header = br.readLine().split(FieldDelimiter, -1);
+        for(int i=0;i<header.length;i++)
+            if(i!=header.length-1&&header[i].isEmpty())
+                numberOfColumnsRemoved++;
+        numberOfColumns=header.length-numberOfColumnsRemoved;
         maxes=new int[numberOfColumns];
         br.close();
         br = new BufferedReader(new FileReader(fileName));
         String line;
+        int lineNumber=0;
         while ((line = br.readLine()) != null) {
             String[] fields = line.split(FieldDelimiter, numberOfColumns);
-            String[] realFields = new String[numberOfColumns];
+            ArrayList<String> realFields = new ArrayList<String>();
             String[] names = new String[numberOfColumns];
-            int indexCommaDelimiterInMoneyString=-1;
             for (int n = 0; n < numberOfColumns; n++) {
                 names[n] = "f" + (n + 1);
                 maxes[n]=Math.max(fields[n].length(),maxes[n]);
-                if (fields[n].contains("$")&&fields[n+1].matches("^[0-9]+(\\.[0-9]+)?(\"?)+$")) {
-                    realFields[n]=fields[n]+" "+fields[n+1];
-                    indexCommaDelimiterInMoneyString=n;
-                }
-                if(n!=numberOfColumns-1)
-                {
-                if(indexCommaDelimiterInMoneyString<n)
-                    realFields[n]=fields[n+1].isEmpty()?"-":fields[n+1];
-                else if (indexCommaDelimiterInMoneyString!=n)
-                    realFields[n]=fields[n].isEmpty()?"-":fields[n];
-                }
-                else if(indexCommaDelimiterInMoneyString<n)
-                    realFields[n]="-";
-
-
+                fields[n]=fields[n].isEmpty()?"-":fields[n];
+                if(lineNumber!=0&&fields[n].length()==1&&!fields[n].matches("^(?:\r\n" + //
+                        "[\\x09\\x0A\\x0D\\x20-\\x7E]              # ASCII\r\n" + //
+                        "| [\\xC2-\\xDF][\\x80-\\xBF]             # non-overlong 2-byte\r\n" + //
+                        "| \\xE0[\\xA0-\\xBF][\\x80-\\xBF]         # excluding overlongs\r\n" + //
+                        "| [\\xE1-\\xEC\\xEE\\xEF][\\x80-\\xBF]{2}  # straight 3-byte\r\n" + //
+                        "| \\xED[\\x80-\\x9F][\\x80-\\xBF]         # excluding surrogates\r\n" + //
+                        "| \\xF0[\\x90-\\xBF][\\x80-\\xBF]{2}      # planes 1-3\r\n" + //
+                        "| [\\xF1-\\xF3][\\x80-\\xBF]{3}          # planes 4-15\r\n" + //
+                        "| \\xF4[\\x80-\\x8F][\\x80-\\xBF]{2}      # plane 16\r\n" + //
+                        ")*$\r\n" + //
+                        ""))
+                    fields[n]="-";
+                realFields.add(fields[n]);
             }
-            Record record = new Record(names, realFields);
+            realFields=checkForErrors(fields,realFields);
+            String []finalFields = realFields.toArray(new String[realFields.size()]);
+            Record record = new Record(names, finalFields);
             dataList.add(record);
+            lineNumber++;
         }
     }
+        public ArrayList<String> checkForErrors(String [] fields,ArrayList<String> realFields)
+        {
+            for (int i = 0; i < numberOfColumns; i++) {
+                if (fields[i].contains("$")&&fields[i+1].matches("^[0-9]+(\\.[0-9]+)?(\"?)+$")) {
+                    cutTheSlack(fields, realFields, i);
+                }
+            }
+            return realFields;
+        }
+        public ArrayList<String> cutTheSlack(String [] fields,ArrayList<String> realFields,int i)
+        {
+            realFields.set(i,fields[i]+" "+fields[i+1]);
+            realFields.remove(realFields.get(i+1));
+            realFields.add("-");
+            return realFields;
+        }
 
 
 
