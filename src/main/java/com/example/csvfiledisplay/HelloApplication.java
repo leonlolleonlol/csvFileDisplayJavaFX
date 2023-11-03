@@ -4,8 +4,6 @@ package com.example.csvfiledisplay;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import javafx.application.Application;
@@ -42,7 +40,6 @@ public class HelloApplication extends Application {
             columns[i].setCellValueFactory(data -> data.getValue().getFieldProperty("f" + index));
             columns[i].setStyle("-fx-font-size: 12;");
         }
-        tableView.getColumns().stream().forEach( (column) -> column.setPrefWidth( maxes[column.getText().charAt(1)] + 10.0d ));
         tableView.setItems(dataList);
         for (var i: columns)
             tableView.getColumns().add(i);
@@ -53,10 +50,11 @@ public class HelloApplication extends Application {
         int desiredWidth=0;
         for(int i:maxes)
             desiredWidth+=i;
-        desiredWidth*=5.66;
-        tableView.setMinSize( desiredWidth, primaryStage.getHeight());
+        tableView.getColumns().stream().forEach( (column) -> column.setPrefWidth( maxes[column.getText().charAt(1)]));
+        desiredWidth*=5.67;
+        //tableView.setMinSize( desiredWidth, primaryStage.getHeight());
         vBox.getChildren().add(tableView);
-        vBox.setMinWidth(desiredWidth*0.9);
+        vBox.setMinWidth(desiredWidth*0.95);
         //vBox.setFillWidth(true);
         root.getChildren().add(vBox);
         primaryStage.setScene(new Scene(root, desiredWidth, primaryStage.getHeight()));
@@ -80,20 +78,23 @@ public class HelloApplication extends Application {
         String line;
         int lineNumber=0;
         while ((line = br.readLine()) != null) {
+            if(lineNumber==277)
+                lineNumber=lineNumber;
+            if(lineNumber==3)
+                lineNumber=lineNumber;
             String[] fields = line.split(FieldDelimiter, numberOfColumns);
             ArrayList<String> realFields = new ArrayList<String>();
             ArrayList<String> names = new ArrayList<String>();
             for (int n = 0; n < numberOfColumns; n++) {
                 names.add( "f" + (n + 1));
-                maxes[n]=Math.max(fields[n].length(),maxes[n]);
-                fields[n]=fields[n].isEmpty()?"-":fields[n];
-                if(lineNumber!=0&&fields[n].length()==1)
-                {
-                    ByteBuffer buffer = StandardCharsets.UTF_8.encode(String.valueOf(fields[n].charAt(0)));
-                    String utf8EncodedString = StandardCharsets.UTF_8.decode(buffer).toString();
-                    if(utf8EncodedString.charAt(0)==',')
-                        fields[n]="-";
-                }
+                if(fields[n].isEmpty()||(lineNumber!=0&&fields[n].charAt(0)==','&&fields[n].length()==1))
+                    fields[n]="-";
+                if(fields[n].length()>1)
+                    while(fields[n].charAt(fields[n].length()-1)==',')
+                        fields[n]=fields[n].substring(0, fields[n].length()-2);
+                if(fields[n].length()>1)
+                    while(fields[n].charAt(0)==',')
+                        fields[n]=fields[n].substring(1, fields[n].length()-1);
                 realFields.add(fields[n]);
             }
             realFields=checkForErrors(fields,realFields);
@@ -112,6 +113,7 @@ public class HelloApplication extends Application {
                 if (fields[i].contains("$")&&fields[i+1].matches("^[0-9]+(\\.[0-9]+)?(\"?)+$")) {
                     cutTheSlack(fields, realFields, i);
                 }
+                maxes[i]=Math.max(realFields.get(i).length(),maxes[i]);
             }
             return realFields;
         }
