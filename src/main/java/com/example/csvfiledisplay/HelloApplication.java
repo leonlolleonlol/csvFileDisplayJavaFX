@@ -32,14 +32,14 @@ public class HelloApplication extends Application {
     String fontsize="-fx-font-size: "+fontSizeNumber+";";
     ArrayList<String> header;
     ChoiceBox cb;
+    String previousChoice="DATAOUTPUT_MODIFIED.csv";
     @Override
     public void start(Stage primaryStage) throws IOException {
         primaryStage.setTitle("Display");
         primaryStage.setHeight(Screen.getPrimary().getVisualBounds().getHeight()*0.9);
         primaryStage.setWidth(Screen.getPrimary().getVisualBounds().getWidth()*0.9);
         cb = new ChoiceBox(FXCollections.observableArrayList("DATAOUTPUT_MODIFIED.csv", "WASTE_BIN_TYPE", "WASTE_INVOICES"));
-        cb.getSelectionModel().selectFirst();
-        readCSV(cb.getValue().toString());
+        readCSV(previousChoice);
         Group root = new Group();
         TableColumn<Record, String>[] columns = new TableColumn[numberOfColumns];
         for (int i = 0; i < numberOfColumns; i++) {
