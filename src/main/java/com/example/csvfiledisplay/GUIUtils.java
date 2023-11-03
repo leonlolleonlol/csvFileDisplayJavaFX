@@ -20,7 +20,7 @@ public class GUIUtils {
         }
     }
 
-    public static void autoFitTable(TableView tableView) {
+    public static void autoFitTable(TableView <Record>tableView) {
         tableView.getItems().addListener((ListChangeListener<Object>) c -> {
             for (Object column : tableView.getColumns()) {
                 try {
