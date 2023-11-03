@@ -78,10 +78,6 @@ public class HelloApplication extends Application {
         String line;
         int lineNumber=0;
         while ((line = br.readLine()) != null) {
-            if(lineNumber==277)
-                lineNumber=lineNumber;
-            if(lineNumber==3)
-                lineNumber=lineNumber;
             String[] fields = line.split(FieldDelimiter, numberOfColumns);
             ArrayList<String> realFields = new ArrayList<String>();
             ArrayList<String> names = new ArrayList<String>();
