@@ -48,15 +48,15 @@ public class CSVFile {
     }
     public static void changeHeight(double newHeight)
     {
-        tableView.setPrefHeight(newHeight-100);
+        tableView.setPrefHeight(newHeight*HelloApplication.RATIO_CONTENT_TO_WINDOW);
     }
-    public static void changeWidth(double newWidth)
+    public static void changeWidth(double newWidth,double screenWidth)
     {
-        tableView.setPrefWidth(newWidth);
+        tableView.setMaxWidth(newWidth);
     }
     public static void resetWidth(double rateOfChange)
     {
-        final double finalRate=rateOfChange*0.9;
+        final double finalRate=rateOfChange*HelloApplication.RATIO_CONTENT_TO_WINDOW;
         for(int i:maxes)
             desiredWidth+=i;
         tableView.getColumns().stream().forEach( (column) -> column.setPrefWidth( FONT_SIZE*0.6*finalRate*(maxes[Integer.parseInt(column.getId())-1])));
