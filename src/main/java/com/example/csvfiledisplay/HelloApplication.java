@@ -1,135 +1,100 @@
 package com.example.csvfiledisplay;
 
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import javafx.application.Application;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import javafx.beans.value.ObservableValue;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 
 public class HelloApplication extends Application {
-    private int[] maxes;
-    private final TableView<Record> tableView = new TableView<>();
-
-    private final ObservableList<Record> dataList
-            = FXCollections.observableArrayList();
-    int numberOfColumns;
-    int fontSizeNumber=12;
-    String fontsize="-fx-font-size: "+fontSizeNumber+";";
-    ArrayList<String> header;
-    ChoiceBox cb;
-    String previousChoice="DATAOUTPUT_MODIFIED.csv";
+    private static String previousChoice="DATAOUTPUT_MODIFIED.csv";
+    private static CSVFile csvFile;
+    private static Group root;
+    private static VBox vBox;
+    private static double screenHeight;
     @Override
     public void start(Stage primaryStage) throws IOException {
         primaryStage.setTitle("Display");
-        primaryStage.setHeight(Screen.getPrimary().getVisualBounds().getHeight()*0.9);
-        primaryStage.setWidth(Screen.getPrimary().getVisualBounds().getWidth()*0.9);
-        cb = new ChoiceBox(FXCollections.observableArrayList("DATAOUTPUT_MODIFIED.csv", "WASTE_BIN_TYPE", "WASTE_INVOICES"));
-        readCSV(previousChoice);
-        Group root = new Group();
-        TableColumn<Record, String>[] columns = new TableColumn[numberOfColumns];
-        for (int i = 0; i < numberOfColumns; i++) {
-            int index = i + 1;
-            columns[i] = new TableColumn<>(header.get(index-1));
-            columns[i].setCellValueFactory(data -> data.getValue().getFieldProperty("f" + index));
-            columns[i].setStyle(fontsize);
-            columns[i].setId(String.valueOf(index));
-        }
-        tableView.setItems(dataList);
-        for (var i: columns)
-            tableView.getColumns().add(i);
-        VBox vBox = new VBox();
+        screenHeight=Screen.getPrimary().getVisualBounds().getHeight();
+        primaryStage.setHeight(screenHeight);
+        primaryStage.setWidth(Screen.getPrimary().getVisualBounds().getWidth());
+        ChoiceBox<String> cb = new ChoiceBox<>();
+        cb.getItems().addAll("DATAOUTPUT_MODIFIED.csv", "WASTE_BIN_TYPE.csv", "WASTE_INVOICES.csv");
+        reset();
+        cb.setValue(previousChoice);
+        cb.setOnAction((event) -> {
+            previousChoice = cb.getSelectionModel().getSelectedItem();
+            System.out.println(0);
+            try {
+                primaryStage.close();
+                start(new Stage());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        Slider heightSlider = new Slider();
+        heightSlider.setMin(CSVFile.getFixedCellSize());
+        heightSlider.setMax(primaryStage.getWidth()*0.9);
+        heightSlider.setValue(heightSlider.getMax());
+        heightSlider.setMaxWidth(primaryStage.getWidth()*0.9);
+        heightSlider.valueProperty().addListener((
+                ObservableValue<? extends Number> ov, Number old_val,
+                Number new_val) -> {
+            CSVFile.changeWidth(heightSlider.getValue());
+        });
+        Label width = new Label("Adjust Width");
+        Slider widthSlider = new Slider();
+        widthSlider.setOrientation(Orientation.VERTICAL);
+        //widthSlider.setTranslateY(screenHeight*0.9/2);
+        widthSlider.setRotate(180);
+        widthSlider.setMin(CSVFile.getFixedCellSize());
+        widthSlider.setMax(primaryStage.getHeight());
+        widthSlider.setValue(widthSlider.getMax());
+        widthSlider.setMinHeight(screenHeight*0.9);
+        widthSlider.valueProperty().addListener((
+                ObservableValue<? extends Number> ov, Number old_val,
+                Number new_val) -> {
+            CSVFile.changeHeight(widthSlider.getValue());
+        });
+        Label height = new Label("Adjust Height");
+        height.setTranslateY(screenHeight*0.9/2);
+        height.setRotate(90);
+        vBox.getChildren().addAll(CSVFile.getTableView(),heightSlider,width);
+        vBox.setMinWidth(CSVFile.getDesiredWidth());
         vBox.setAlignment(Pos.CENTER);
-        int desiredWidth=0;
-        for(int i:maxes)
-            desiredWidth+=i;
-        tableView.getColumns().stream().forEach( (column) -> column.setPrefWidth( fontSizeNumber*0.6*(maxes[Integer.parseInt(column.getId())-1])));
-        desiredWidth*=fontSizeNumber*0.6;
-        vBox.getChildren().add(tableView);
-        vBox.getChildren().add(cb);
-        vBox.setMinWidth(desiredWidth);
-        root.getChildren().add(vBox);
-        primaryStage.setScene(new Scene(root, desiredWidth, primaryStage.getHeight()));
+        HBox hBox=new HBox();
+        VBox secondVbox=new VBox();
+        Label choice=new Label("Current File");
+        secondVbox.getChildren().addAll(height,widthSlider,choice,cb);
+        hBox.getChildren().addAll(vBox,secondVbox);
+        root.getChildren().addAll(hBox);
+        if(CSVFile.getDesiredWidth()>primaryStage.getWidth());
+            CSVFile.resetWidth(primaryStage.getWidth()/CSVFile.getDesiredWidth());
+        Scene scene=new Scene(root, CSVFile.getDesiredWidth(), primaryStage.getHeight());
+        primaryStage.setMaximized(true);
+        primaryStage.setScene(scene);
         primaryStage.show();
 
     }
-    public void readCSV(String fileName) throws IOException {
-        String FieldDelimiter = ",";
-        BufferedReader br;
-        var columnIndexRemoved=new ArrayList<Integer>();
-        br = new BufferedReader(new FileReader(fileName));
-        header = new ArrayList<String>(Arrays.asList(br.readLine().split(FieldDelimiter, -1)));
-        for(int i=0;i<header.size();i++)
-            if(i!=header.size()-1&&header.get(i).isEmpty())
-            {
-                columnIndexRemoved.add(i);
-                header.remove(i);
-            }
-        numberOfColumns=header.size();
-        maxes=new int[numberOfColumns];
-        for(int i=0;i<numberOfColumns;i++)
-            maxes[i]=Math.max(header.get(i).length(),maxes[i]);
-        br.close();
-        br = new BufferedReader(new FileReader(fileName));
-        br.readLine();
-        String line;
-        while ((line = br.readLine()) != null) {
-            String[] fields = line.split(FieldDelimiter, numberOfColumns);
-            ArrayList<String> realFields = new ArrayList<String>();
-            ArrayList<String> names = new ArrayList<String>();
-            for (int n = 0; n < numberOfColumns; n++) {
-                names.add( "f" + (n + 1));
-                if(fields[n].isEmpty()||(fields[n].charAt(0)==','&&fields[n].length()==1))
-                    fields[n]="-";
-                if(fields[n].length()>1)
-                    while(fields[n].charAt(fields[n].length()-1)==',')
-                        fields[n]=fields[n].substring(0, fields[n].length()-2);
-                if(fields[n].length()>1)
-                    while(fields[n].charAt(0)==',')
-                        fields[n]=fields[n].substring(1, fields[n].length());
-                realFields.add(fields[n]);
-            }
-            realFields=checkForErrors(fields,realFields);
-            Record record = new Record(transformArrayListToArray(names), transformArrayListToArray(realFields));
-            dataList.add(record);
-        }
-    }
-    public String[] transformArrayListToArray(ArrayList <String> a)
+    public static void reset() throws IOException
     {
-        return a.toArray(new String[a.size()]);
+    csvFile=new CSVFile(previousChoice,screenHeight);
+    csvFile.readCSV();
+    root = new Group();
+    vBox = new VBox();
     }
-        public ArrayList<String> checkForErrors(String [] fields,ArrayList<String> realFields)
-        {
-            for (int i = 0; i < numberOfColumns; i++) {
-                if (fields[i].contains("$")&&fields[i+1].matches("^[0-9]+(\\.[0-9]+)?(\"?)+$")) {
-                    cutTheSlack(fields, realFields, i);
-                }
-                maxes[i]=Math.max(realFields.get(i).length(),maxes[i]);
-            }
-            return realFields;
-        }
-        public ArrayList<String> cutTheSlack(String [] fields,ArrayList<String> realFields,int i)
-        {
-            realFields.set(i,fields[i]+" "+fields[i+1]);
-            realFields.remove(realFields.get(i+1));
-            realFields.add("-");
-            return realFields;
-        }
-
 
 
 public static void main(String[] args) {
