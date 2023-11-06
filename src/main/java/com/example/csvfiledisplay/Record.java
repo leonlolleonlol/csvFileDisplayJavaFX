@@ -1,13 +1,14 @@
 package com.example.csvfiledisplay;
 
-import javafx.beans.property.SimpleStringProperty;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import javafx.beans.property.SimpleStringProperty;
 
 public class Record {
 
     private Map<String, SimpleStringProperty> fields;
+
     public SimpleStringProperty getFieldProperty(String fieldName) {
         return fields.get(fieldName);
     }
@@ -22,6 +23,5 @@ public class Record {
             this.fields.put(fieldNames[i], new SimpleStringProperty(fieldValues[i]));
         }
     }
-
 
 }
