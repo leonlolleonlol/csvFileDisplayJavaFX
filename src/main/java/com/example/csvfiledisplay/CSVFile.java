@@ -62,37 +62,6 @@ public class CSVFile {
         tableView.getColumns().stream().forEach( (column) -> column.setPrefWidth( FONT_SIZE*0.6*finalRate*(maxes[Integer.parseInt(column.getId())-1])));
         desiredWidth*=FONT_SIZE*0.6;
     }
-    public static int[] getMaxes() {
-        return maxes;
-    }
-    public static TableView<Record> getTableView() {
-        return tableView;
-    }
-    public static ObservableList<Record> getDataList() {
-        return dataList;
-    }
-    public static int getNumberOfColumns() {
-        return numberOfColumns;
-    }
-    
-    public static int getFONT_SIZE() {
-        return FONT_SIZE;
-    }
-    public static String getFontsize() {
-        return fontsize;
-    }
-    public static ArrayList<String> getHeader() {
-        return header;
-    }
-    public static String getLastChoice() {
-        return lastChoice;
-    }
-    public static TableColumn<Record, String>[] getColumns() {
-        return columns;
-    }
-    public static int getDesiredWidth() {
-        return desiredWidth;
-    }
     public void readCSV() throws IOException {
         String FieldDelimiter = ",";
         BufferedReader br;
@@ -138,18 +107,18 @@ public class CSVFile {
     {
         return a.toArray(new String[a.size()]);
     }
-        public ArrayList<String> checkForErrors(String [] fields,ArrayList<String> realFields)
-        {
-            for (int i = 0; i < numberOfColumns; i++) {
-                if (fields[i].contains("$")&&fields[i+1].matches("^[0-9]+(\\.[0-9]+)?(\"?)+$")) {
-                    realFields.set(i,fields[i]+" "+fields[i+1]);
-                    realFields.remove(realFields.get(i+1));
-                    realFields.add("-");
-                }
-                maxes[i]=Math.max(realFields.get(i).length(),maxes[i]);
+    public ArrayList<String> checkForErrors(String [] fields,ArrayList<String> realFields)
+    {
+        for (int i = 0; i < numberOfColumns; i++) {
+            if (fields[i].contains("$")&&fields[i+1].matches("^[0-9]+(\\.[0-9]+)?(\"?)+$")) {
+                realFields.set(i,fields[i]+" "+fields[i+1]);
+                realFields.remove(realFields.get(i+1));
+                realFields.add("-");
             }
-            return realFields;
+            maxes[i]=Math.max(realFields.get(i).length(),maxes[i]);
         }
+        return realFields;
+    }
     @Override
     public String toString() {
         return lastChoice;
@@ -157,6 +126,35 @@ public class CSVFile {
     public static int getFixedCellSize() {
         return FIXED_CELL_SIZE;
     }
-    
+    public static int[] getMaxes() {
+        return maxes;
+    }
+    public static TableView<Record> getTableView() {
+        return tableView;
+    }
+    public static ObservableList<Record> getDataList() {
+        return dataList;
+    }
+    public static int getNumberOfColumns() {
+        return numberOfColumns;
+    }
+    public static int getFONT_SIZE() {
+        return FONT_SIZE;
+    }
+    public static String getFontsize() {
+        return fontsize;
+    }
+    public static ArrayList<String> getHeader() {
+        return header;
+    }
+    public static String getLastChoice() {
+        return lastChoice;
+    }
+    public static TableColumn<Record, String>[] getColumns() {
+        return columns;
+    }
+    public static int getDesiredWidth() {
+        return desiredWidth;
+    }
 }
 
