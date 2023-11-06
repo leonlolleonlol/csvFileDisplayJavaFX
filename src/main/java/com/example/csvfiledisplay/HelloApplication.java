@@ -25,8 +25,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 public class HelloApplication extends Application {
-    private static String previousChoice = "CATALOG_2022_08_16.csv";
-    private static CSVFile csvFile;
+    private static String previousChoice = "CATALOG_2023_09_19.csv";
     private static Group root;
     private static double screenHeight;
     public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1300;
@@ -105,7 +104,7 @@ public class HelloApplication extends Application {
         choice.setFont(Font.font(16));
         Button buttonImport = new Button("Import your .csv file");
         secondVbox.setSpacing(5);
-        secondVbox.getChildren().addAll(height, widthSlider, choice, cb, buttonImport, new Text("Made by:"), hyperlink);
+        secondVbox.getChildren().addAll(height, widthSlider, choice, cb, new Text(String.valueOf(CSVFile.getDataList().size())+" rows & "+CSVFile.getNumberOfColumns()+" columns."),buttonImport, new Text("Made by:"), hyperlink);
         secondVbox.setAlignment(Pos.TOP_LEFT);
         hBox.getChildren().addAll(vBox, secondVbox);
         root.getChildren().addAll(hBox);
@@ -148,7 +147,7 @@ public class HelloApplication extends Application {
     }
 
     public static void reset() throws IOException {
-        csvFile = new CSVFile(previousChoice, screenHeight, actualFile);
+        new CSVFile(previousChoice, screenHeight, actualFile);
         root = new Group();
     }
 

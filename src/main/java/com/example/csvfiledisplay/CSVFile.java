@@ -1,8 +1,9 @@
 package com.example.csvfiledisplay;
 
+import static java.nio.charset.StandardCharsets.*;
+
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,9 +20,8 @@ public class CSVFile {
     private static ObservableList<Record> dataList;
     private static int numberOfColumns, desiredWidth;
     private static final int FONT_SIZE = 12, FIXED_CELL_SIZE = 25;
-    private static String fontsize = "-fx-font-size: " + FONT_SIZE + ";";
+    private static String lastChoice, fontSizeString = "-fx-font-size: " + FONT_SIZE + ";";
     private static ArrayList<String> header;
-    private static String lastChoice;
     private static TableColumn<Record, String>[] columns;
     private static File importedFile;
 
@@ -41,7 +41,7 @@ public class CSVFile {
             columns[i] = new TableColumn<>(header.get(index - 1));
             columns[i].setCellValueFactory(data -> data.getValue().getFieldProperty("f" + index));
             tableView.setFixedCellSize(FIXED_CELL_SIZE);
-            columns[i].setStyle(fontsize);
+            columns[i].setStyle(fontSizeString);
             columns[i].setId(String.valueOf(index));
         }
         tableView.setItems(dataList);
@@ -72,12 +72,13 @@ public class CSVFile {
         BufferedReader b = null;
         try {
             if (lastChoice == null)
-                b = new BufferedReader(new FileReader(importedFile));
+                b = new BufferedReader(new FileReader(importedFile, UTF_8));
             else
-
-                b = new BufferedReader(new FileReader(lastChoice));
-        } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
+                b = new BufferedReader(new FileReader(lastChoice, UTF_8));
+            if (lastChoice!=null&&lastChoice.equals("DATA_OUTPUT.csv"))
+                for (int i = 0; i < 17; i++)
+                    b.readLine();
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return b;
@@ -103,9 +104,9 @@ public class CSVFile {
         br = checkFile();
         br.readLine();
         String line = null;
-        int lineNumber = 1;
         while ((line = br.readLine()) != null) {
             String[] firstFields = line.split(fieldDelimiter, numberOfColumns);
+            if(firstFields!=null){
             String[] fields = new String[numberOfColumns];
             if (firstFields.length < numberOfColumns) {
                 for (int i = 0; i < numberOfColumns; i++) {
@@ -116,7 +117,6 @@ public class CSVFile {
                 }
             } else
                 fields = firstFields;
-            if (fields != null) {
                 ArrayList<String> realFields = new ArrayList<String>();
                 ArrayList<String> names = new ArrayList<String>();
                 for (int n = 0; n < numberOfColumns; n++) {
@@ -124,17 +124,19 @@ public class CSVFile {
                     if (fields[n].isEmpty() || (fields[n].charAt(0) == ',' && fields[n].length() == 1))
                         fields[n] = "-";
                     if (fields[n].length() > 1) {
-                        while (fields[n].charAt(fields[n].length() - 1) == ',')
-                            fields[n] = fields[n].substring(0, fields[n].length() - 2);
-                        while (fields[n].charAt(0) == ',')
-                            fields[n] = fields[n].substring(1, fields[n].length());
+                        fields[n].replaceAll(",*", " ");
+                        fields[n].replaceAll("\"*", " ");
+                        String characterToString = String.valueOf(fields[n].charAt(0));
+                        if (characterToString.matches("/^[A-Za-z]+$/"))
+                            fields[n] = String.valueOf(characterToString).toUpperCase() + fields[n].substring(1);
+                        else if (characterToString.matches(" "))
+                            fields[n] = fields[n].substring(1);
                     }
                     realFields.add(fields[n]);
                 }
                 realFields = checkForErrors(fields, realFields);
                 Record record = new Record(transformArrayListToArray(names), transformArrayListToArray(realFields));
                 dataList.add(record);
-                lineNumber++;
             }
         }
     }
@@ -184,8 +186,8 @@ public class CSVFile {
         return FONT_SIZE;
     }
 
-    public static String getFontsize() {
-        return fontsize;
+    public static String getFontsizestring() {
+        return fontSizeString;
     }
 
     public static ArrayList<String> getHeader() {
