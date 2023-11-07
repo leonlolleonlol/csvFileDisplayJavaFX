@@ -15,14 +15,17 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 public class HelloApplication extends Application {
     private static String previousChoice = "CATALOG_2023_09_19.csv";
@@ -31,9 +34,19 @@ public class HelloApplication extends Application {
     public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1300;
     private static Hyperlink hyperlink = new Hyperlink("www.github.com/leonlolleonlol");
     private static File actualFile = null;
+    private static double ii;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
+        ProgressIndicator pb = new ProgressIndicator();
+        primaryStage.setOnShown(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                ii += 0.1;
+                pb.setProgress(ii);
+            }
+        });
+        if (ii>10000) {
         screenHeight = Screen.getPrimary().getVisualBounds().getHeight();
         primaryStage.setHeight(screenHeight);
         primaryStage.setWidth(Screen.getPrimary().getVisualBounds().getWidth());
@@ -100,11 +113,30 @@ public class HelloApplication extends Application {
         HBox hBox = new HBox();
         VBox secondVbox = new VBox();
         secondVbox.setLayoutY(0);
-        Label choice = new Label("Current File");
+        Label choice = new Label("Current File: (" + String.valueOf(CSVFile.getDataList().size()) + " rows & "
+                + CSVFile.getNumberOfColumns() + " columns)");
         choice.setFont(Font.font(16));
         Button buttonImport = new Button("Import your .csv file");
         secondVbox.setSpacing(5);
-        secondVbox.getChildren().addAll(height, widthSlider, choice, cb, new Text(String.valueOf(CSVFile.getDataList().size())+" rows & "+CSVFile.getNumberOfColumns()+" columns."),buttonImport, new Text("Made by:"), hyperlink);
+        Slider textSizeSlider = new Slider(7, 20, CSVFile.getFontSize());
+        textSizeSlider.setBlockIncrement(1);
+        textSizeSlider.valueProperty().addListener((
+                ObservableValue<? extends Number> ov, Number old_val,
+                Number new_val) -> {
+            CSVFile.changeTextSize((int) textSizeSlider.getValue());
+            try {
+                start(primaryStage);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        HBox miniHBox = new HBox();
+        VBox minVBox = new VBox();
+        minVBox.setAlignment(Pos.CENTER);
+        minVBox.getChildren().addAll(new Text("Change text font size"), textSizeSlider);
+        miniHBox.getChildren().addAll(cb, minVBox);
+        secondVbox.getChildren().addAll(height, widthSlider, choice, miniHBox, buttonImport, new Text("Made by:"),
+                hyperlink);
         secondVbox.setAlignment(Pos.TOP_LEFT);
         hBox.getChildren().addAll(vBox, secondVbox);
         root.getChildren().addAll(hBox);
@@ -144,6 +176,13 @@ public class HelloApplication extends Application {
                 e.printStackTrace();
             }
         });
+    }
+    else
+    {
+    Scene sc = new Scene(new Pane(pb), 200, 200);
+    primaryStage.setScene(sc);
+    primaryStage.show();
+    }
     }
 
     public static void reset() throws IOException {

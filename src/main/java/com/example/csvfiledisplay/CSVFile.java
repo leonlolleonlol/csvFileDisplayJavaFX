@@ -8,6 +8,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -18,9 +20,10 @@ public class CSVFile {
     private static int[] maxes;
     private static TableView<Record> tableView;
     private static ObservableList<Record> dataList;
-    private static int numberOfColumns, desiredWidth;
-    private static final int FONT_SIZE = 12, FIXED_CELL_SIZE = 25;
-    private static String lastChoice, fontSizeString = "-fx-font-size: " + FONT_SIZE + ";";
+    private static double screenSizeSaved;
+    private static int numberOfColumns, desiredWidth, fontSize = 12;
+    private static final int FIXED_CELL_SIZE = 25;
+    private static String lastChoice, fontSizeString = "-fx-font-size: " + fontSize + ";";
     private static ArrayList<String> header;
     private static TableColumn<Record, String>[] columns;
     private static File importedFile;
@@ -28,6 +31,7 @@ public class CSVFile {
     public CSVFile(String file, double screenSize, File fileImport) throws IOException {
         lastChoice = file;
         importedFile = fileImport;
+        screenSizeSaved = screenSize;
         dataList = FXCollections.observableArrayList();
         tableView = new TableView<>();
         tableView.setTranslateX(0);
@@ -55,6 +59,11 @@ public class CSVFile {
         tableView.setPrefHeight(newHeight * HelloApplication.RATIO_CONTENT_TO_WINDOW);
     }
 
+    public static void changeTextSize(int newSize) {
+        fontSize = newSize;
+        fontSizeString = "-fx-font-size: " + fontSize + ";";
+    }
+
     public static void changeWidth(double newWidth, double screenWidth) {
         tableView.setMaxWidth(newWidth);
     }
@@ -64,8 +73,8 @@ public class CSVFile {
         for (int i : maxes)
             desiredWidth += i;
         tableView.getColumns().stream().forEach((column) -> column
-                .setPrefWidth(FONT_SIZE * 0.6 * finalRate * (maxes[Integer.parseInt(column.getId()) - 1])));
-        desiredWidth *= FONT_SIZE * 0.6;
+                .setPrefWidth(fontSize * 0.6 * finalRate * (maxes[Integer.parseInt(column.getId()) - 1])));
+        desiredWidth *= fontSize * 0.6;
     }
 
     public static BufferedReader checkFile() {
@@ -75,7 +84,7 @@ public class CSVFile {
                 b = new BufferedReader(new FileReader(importedFile, UTF_8));
             else
                 b = new BufferedReader(new FileReader(lastChoice, UTF_8));
-            if (lastChoice!=null&&lastChoice.equals("DATA_OUTPUT.csv"))
+            if (lastChoice != null && lastChoice.equals("DATA_OUTPUT.csv"))
                 for (int i = 0; i < 17; i++)
                     b.readLine();
         } catch (IOException e) {
@@ -105,29 +114,41 @@ public class CSVFile {
         br.readLine();
         String line = null;
         while ((line = br.readLine()) != null) {
-            String[] firstFields = line.split(fieldDelimiter, numberOfColumns);
-            if(firstFields!=null){
-            String[] fields = new String[numberOfColumns];
-            if (firstFields.length < numberOfColumns) {
-                for (int i = 0; i < numberOfColumns; i++) {
-                    if (i < firstFields.length)
-                        fields[i] = firstFields[i];
-                    else
-                        fields[i] = "-";
-                }
-            } else
-                fields = firstFields;
+            Pattern pattern = Pattern.compile("\"");
+            Matcher matcher = pattern.matcher(line);
+            int count = 0;
+            while (matcher.find())
+                count++;
+            if (count == 1) {
+                line += br.readLine();
+            }
+            pattern = Pattern.compile(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+            String[] firstFields = pattern.split(line);
+            if (firstFields != null) {
+                String[] fields = new String[numberOfColumns];
+                for (int i = 0; i < firstFields.length; i++)
+                    if (firstFields[i] != null && firstFields[i].length() > 2 && firstFields[i].charAt(0) == '\"'
+                            && firstFields[i].charAt(firstFields[i].length() - 1) == '\"')
+                        firstFields[i] = firstFields[i].substring(1, firstFields[i].length() - 1);
+                if (firstFields.length < numberOfColumns) {
+                    for (int i = 0; i < numberOfColumns; i++) {
+                        if (i < firstFields.length)
+                            fields[i] = firstFields[i];
+                        else
+                            fields[i] = "-";
+                    }
+                } else
+                    fields = firstFields;
                 ArrayList<String> realFields = new ArrayList<String>();
                 ArrayList<String> names = new ArrayList<String>();
                 for (int n = 0; n < numberOfColumns; n++) {
                     names.add("f" + (n + 1));
-                    if (fields[n].isEmpty() || (fields[n].charAt(0) == ',' && fields[n].length() == 1))
+                    if (fields[n].isEmpty() || ((fields[n].charAt(0) == ',' || fields[n].charAt(0) == '\u00a0')
+                            && fields[n].length() == 1))
                         fields[n] = "-";
                     if (fields[n].length() > 1) {
-                        fields[n].replaceAll(",*", " ");
-                        fields[n].replaceAll("\"*", " ");
                         String characterToString = String.valueOf(fields[n].charAt(0));
-                        if (characterToString.matches("/^[A-Za-z]+$/"))
+                        if (characterToString.matches("[a-z]"))
                             fields[n] = String.valueOf(characterToString).toUpperCase() + fields[n].substring(1);
                         else if (characterToString.matches(" "))
                             fields[n] = fields[n].substring(1);
@@ -182,8 +203,8 @@ public class CSVFile {
         return numberOfColumns;
     }
 
-    public static int getFONT_SIZE() {
-        return FONT_SIZE;
+    public static double getFontSize() {
+        return fontSize;
     }
 
     public static String getFontsizestring() {
