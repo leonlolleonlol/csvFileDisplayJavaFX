@@ -31,33 +31,40 @@ public class HelloApplication extends Application {
     private static String previousChoice = "CATALOG_2023_09_19.csv";
     private static Group root;
     private static double screenHeight;
-    public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1300;
+    public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1100;
     private static Hyperlink hyperlink = new Hyperlink("www.github.com/leonlolleonlol");
     private static File actualFile = null;
     private static boolean finished = false;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
+        primaryStage.setMaximized(true);
         TaskOne taskOne = new TaskOne(primaryStage);
         Thread thread1 = new Thread(taskOne);
+        thread1.start();
         TaskTwo taskTwo = new TaskTwo(primaryStage);
         Thread thread2 = new Thread(taskTwo);
-        thread1.start();
         thread2.start();
     }
 
     public static void reset() throws IOException {
-        // new CSVFile(previousChoice, screenHeight, actualFile);
         root = new Group();
+        new CSVFile(previousChoice, screenHeight, actualFile);
     }
 
     public static void main(String[] args) {
         launch(args);
     }
 
-    public void restart(Stage primaryStage) throws IOException {
-        primaryStage.close();
-        start(new Stage());
+    public void restart(Stage primaryStage,boolean restartAnimation) throws IOException {
+        root = new Group();
+        if(!restartAnimation)
+            new TaskOne(primaryStage).run();
+        else
+        {
+            finished=false;
+            start(new Stage());
+        }
     }
 
     class TaskOne implements Runnable {
@@ -71,8 +78,6 @@ public class HelloApplication extends Application {
         public void run() {
             Platform.runLater(() -> {
                 try {
-                    new CSVFile(previousChoice, screenHeight, actualFile);
-                    primaryStage.setMaximized(true);
                     screenHeight = Screen.getPrimary().getVisualBounds().getHeight();
                     primaryStage.setHeight(screenHeight);
                     primaryStage.setWidth(Screen.getPrimary().getVisualBounds().getWidth());
@@ -174,8 +179,11 @@ public class HelloApplication extends Application {
                     Scene scene = new Scene(root, CSVFile.getDesiredWidth(), primaryStage.getHeight());
                     if (actualFile != null)
                         primaryStage.setTitle("IMPORTED DATA -> " + actualFile.toString());
+                    if(finished)
+                    {
                     primaryStage.setScene(scene);
                     primaryStage.show();
+                    }
                     hyperlink.setOnAction(new EventHandler<ActionEvent>() {
                         @Override
                         public void handle(ActionEvent e) {
@@ -188,7 +196,7 @@ public class HelloApplication extends Application {
                         if (actualFile.exists() && actualFile.canRead()) {
                             previousChoice = null;
                             try {
-                                restart(primaryStage);
+                                restart(primaryStage,false);
                             } catch (IOException a) {
                                 a.printStackTrace();
                             }
@@ -198,7 +206,8 @@ public class HelloApplication extends Application {
                     cb.setOnAction((event) -> {
                         previousChoice = cb.getSelectionModel().getSelectedItem();
                         try {
-                            restart(primaryStage);
+                            restart(primaryStage,true);
+                            primaryStage.close();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -211,7 +220,7 @@ public class HelloApplication extends Application {
     }
 
     class TaskTwo implements Runnable {
-        Stage primaryStage;
+        private Stage primaryStage;
         long startTime;
         ProgressIndicator pb = new ProgressIndicator();
 
@@ -228,14 +237,14 @@ public class HelloApplication extends Application {
                     @Override
                     public void handle(long now) {
                         long elapsedTime = now - startTime;
-                        progress[0] = elapsedTime / 9e9; // Change this value to adjust the animation speed
+                        progress[0] = elapsedTime / 2e9; // Change this value to adjust the animation speed
                         if (progress[0] > 1.016 && !finished) {
                             progress[0] = 1.0;
-                            finished = true;
+                            stop();
                             try {
                                 Platform.runLater(() -> {
                                     try {
-                                        restart(primaryStage);
+                                        restart(primaryStage,false);
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }
@@ -243,7 +252,6 @@ public class HelloApplication extends Application {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                            stop();
                             finished = true;
                         } else {
                             Platform.runLater(() -> pb.setProgress(progress[0]));
@@ -253,9 +261,8 @@ public class HelloApplication extends Application {
                 timer.start();
                 if (pb.getProgress() < 1) {
                     Platform.runLater(() -> {
-                        primaryStage.setMaximized(true);
-                        primaryStage.setScene(new Scene(pb, 100, 100));
-                        primaryStage.show();
+                    primaryStage.setScene(new Scene(pb));
+                    primaryStage.show();
                     });
                 }
             }
