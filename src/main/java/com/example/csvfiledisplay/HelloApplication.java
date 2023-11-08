@@ -31,187 +31,51 @@ public class HelloApplication extends Application {
     private static String previousChoice = "CATALOG_2023_09_19.csv";
     private static Group root;
     private static double screenHeight;
-    public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1100;
+    public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1200;
     private static Hyperlink hyperlink = new Hyperlink("www.github.com/leonlolleonlol");
     private static File actualFile = null;
     private static boolean finished = false;
+    private int value = 12;
+    private Stage changingStage;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        primaryStage.setMaximized(true);
-        TaskOne taskOne = new TaskOne(primaryStage);
-        Thread thread1 = new Thread(taskOne);
-        thread1.start();
-        TaskTwo taskTwo = new TaskTwo(primaryStage);
+        changingStage = primaryStage;
+        changingStage.setMaximized(true);
+        TaskTwo taskTwo = new TaskTwo();
         Thread thread2 = new Thread(taskTwo);
         thread2.start();
-    }
-
-    public static void reset() throws IOException {
-        root = new Group();
-        new CSVFile(previousChoice, screenHeight, actualFile);
+        TaskThree taskThree = new TaskThree();
+        Thread thread3 = new Thread(taskThree);
+        thread3.start();
     }
 
     public static void main(String[] args) {
         launch(args);
     }
 
-    public void restart(Stage primaryStage,boolean restartAnimation) throws IOException {
-        root = new Group();
-        if(!restartAnimation)
-            new TaskOne(primaryStage).run();
-        else
-        {
-            finished=false;
-            start(new Stage());
+    public void restart() throws IOException {
+        TaskThree taskThree = new TaskThree();
+        Thread thread3 = new Thread(taskThree);
+        thread3.start();
+        try {
+            thread3.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+        finished=true;
+        TaskOne taskOne = new TaskOne();
+        Thread thread1 = new Thread(taskOne);
+        thread1.start();
     }
 
-    class TaskOne implements Runnable {
-        Stage primaryStage;
-
-        public TaskOne(Stage primaryStag) {
-            primaryStage = primaryStag;
-        }
+    class TaskThree implements Runnable {
 
         @Override
         public void run() {
             Platform.runLater(() -> {
                 try {
-                    screenHeight = Screen.getPrimary().getVisualBounds().getHeight();
-                    primaryStage.setHeight(screenHeight);
-                    primaryStage.setWidth(Screen.getPrimary().getVisualBounds().getWidth());
-                    ChoiceBox<String> cb = new ChoiceBox<>();
-                    cb.getItems().addAll("DATAOUTPUT_MODIFIED.csv", "WASTE_BIN_TYPE.csv", "WASTE_INVOICES.csv",
-                            "CATALOG_2022_08_16.csv", "CATALOG_2023_09_19.csv", "CATALOG.csv",
-                            "CU_SR_OPEN_DATA_TERM_SESS.csv",
-                            "DATA_OUTPUT.csv", "FacList.csv", "POINT_LIST.csv", "BUILDING_LIST.csv", "WASTE_TYPE.csv");
-                    if (previousChoice != null) {
-                        actualFile = null;
-                        primaryStage.setTitle("CONCORDIA'S OPEN DATA -> " + previousChoice);
-                    }
-                    reset();
-                    cb.setValue(previousChoice);
-                    Slider heightSlider = new Slider() {
-                        @Override
-                        protected void layoutChildren() {
-                            super.layoutChildren();
-                            for (javafx.scene.Node node : lookupAll(".track")) {
-                                node.setVisible(false);
-                                node.setManaged(false);
-                            }
-                        }
-                    };
-                    heightSlider.setMin(CSVFile.getCellsize());
-                    heightSlider.setMax(primaryStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
-                    heightSlider.setValue(heightSlider.getMax());
-                    heightSlider.setMinWidth(primaryStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
-                    heightSlider.valueProperty().addListener((
-                            ObservableValue<? extends Number> ov, Number old_val,
-                            Number new_val) -> {
-                        CSVFile.changeWidth(heightSlider.getValue(), heightSlider.getMax());
-                    });
-                    Label width = new Label("Adjust Width");
-                    width.setTranslateX(RATIO_CONTENT_TO_WINDOW * primaryStage.getWidth() / 2);
-                    Slider widthSlider = new Slider() {
-                        @Override
-                        protected void layoutChildren() {
-                            super.layoutChildren();
-                            for (javafx.scene.Node node : lookupAll(".track")) {
-                                node.setVisible(false);
-                                node.setManaged(false);
-                            }
-                        }
-                    };
-                    widthSlider.setTranslateY(-20);
-                    widthSlider.setOrientation(Orientation.VERTICAL);
-                    widthSlider.setRotate(180);
-                    widthSlider.setMin(CSVFile.getCellsize());
-                    widthSlider.setMax(primaryStage.getHeight());
-                    widthSlider.setValue(widthSlider.getMax());
-                    widthSlider.setMinHeight(screenHeight * RATIO_CONTENT_TO_WINDOW);
-                    widthSlider.valueProperty().addListener((
-                            ObservableValue<? extends Number> ov, Number old_val,
-                            Number new_val) -> {
-                        CSVFile.changeHeight(widthSlider.getValue());
-                    });
-                    Label height = new Label("Adjust Height");
-                    height.setTranslateY(screenHeight * RATIO_CONTENT_TO_WINDOW / 2);
-                    height.setRotate(90);
-                    var vBox = new VBox();
-                    vBox.getChildren().addAll(CSVFile.getTableView(), heightSlider, width);
-                    vBox.setMinWidth(CSVFile.getTableView().getMinWidth());
-                    vBox.setAlignment(Pos.TOP_LEFT);
-                    HBox hBox = new HBox();
-                    VBox secondVbox = new VBox();
-                    secondVbox.setLayoutY(0);
-                    Label choice = new Label(
-                            "Current File: (" + String.valueOf(CSVFile.getDataList().size()) + " rows & "
-                                    + CSVFile.getNumberOfColumns() + " columns)");
-                    choice.setFont(Font.font(16));
-                    Button buttonImport = new Button("Import your .csv file");
-                    secondVbox.setSpacing(5);
-                    Slider textSizeSlider = new Slider(1, 23, CSVFile.getFontSize());
-                    textSizeSlider.setBlockIncrement(1);
-                    textSizeSlider.valueProperty().addListener((
-                            ObservableValue<? extends Number> ov, Number old_val,
-                            Number new_val) -> {
-                        CSVFile.changeTextSize((int) textSizeSlider.getValue());
-                        try {
-                            start(primaryStage);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                    HBox miniHBox = new HBox();
-                    VBox minVBox = new VBox();
-                    minVBox.setAlignment(Pos.CENTER);
-                    minVBox.getChildren().addAll(
-                            new Text("Zoom : " + (int) textSizeSlider.getValue() * 100 / 12 + " %"), textSizeSlider);
-                    miniHBox.getChildren().addAll(cb, minVBox);
-                    secondVbox.getChildren().addAll(height, widthSlider, choice, miniHBox, buttonImport,
-                            new Text("Made by:"),
-                            hyperlink);
-                    secondVbox.setAlignment(Pos.TOP_LEFT);
-                    hBox.getChildren().addAll(vBox, secondVbox);
-                    root.getChildren().addAll(hBox);
-                    CSVFile.resetWidth(primaryStage.getWidth() / CSVFile.getDesiredWidth());
-                    Scene scene = new Scene(root, CSVFile.getDesiredWidth(), primaryStage.getHeight());
-                    if (actualFile != null)
-                        primaryStage.setTitle("IMPORTED DATA -> " + actualFile.toString());
-                    if(finished)
-                    {
-                    primaryStage.setScene(scene);
-                    primaryStage.show();
-                    }
-                    hyperlink.setOnAction(new EventHandler<ActionEvent>() {
-                        @Override
-                        public void handle(ActionEvent e) {
-                            getHostServices().showDocument("https://www.github.com/leonlolleonlol");
-                        }
-                    });
-                    buttonImport.setOnAction(e -> {
-                        actualFile = new FileChooser().showOpenDialog(primaryStage);
-                        // si on peut lire le file
-                        if (actualFile.exists() && actualFile.canRead()) {
-                            previousChoice = null;
-                            try {
-                                restart(primaryStage,false);
-                            } catch (IOException a) {
-                                a.printStackTrace();
-                            }
-                        }
-
-                    });
-                    cb.setOnAction((event) -> {
-                        previousChoice = cb.getSelectionModel().getSelectedItem();
-                        try {
-                            restart(primaryStage,true);
-                            primaryStage.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
+                    new CSVFile(previousChoice, screenHeight, actualFile);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -219,14 +83,161 @@ public class HelloApplication extends Application {
         }
     }
 
+    class TaskOne implements Runnable {
+        @Override
+        public void run() {
+            Platform.runLater(() -> {
+                root = new Group();
+                screenHeight = Screen.getPrimary().getVisualBounds().getHeight();
+                changingStage.setHeight(screenHeight);
+                changingStage.setWidth(Screen.getPrimary().getVisualBounds().getWidth());
+                ChoiceBox<String> cb = new ChoiceBox<>();
+                cb.getItems().addAll("DATAOUTPUT_MODIFIED.csv", "WASTE_BIN_TYPE.csv", "WASTE_INVOICES.csv",
+                        "CATALOG_2022_08_16.csv", "CATALOG_2023_09_19.csv", "CATALOG.csv",
+                        "CU_SR_OPEN_DATA_TERM_SESS.csv",
+                        "DATA_OUTPUT.csv", "FacList.csv", "POINT_LIST.csv", "BUILDING_LIST.csv", "WASTE_TYPE.csv");
+                if (previousChoice != null) {
+                    actualFile = null;
+                    changingStage.setTitle("CONCORDIA'S OPEN DATA -> " + previousChoice);
+                }
+                cb.setValue(previousChoice);
+                Slider heightSlider = new Slider() {
+                    @Override
+                    protected void layoutChildren() {
+                        super.layoutChildren();
+                        for (javafx.scene.Node node : lookupAll(".track")) {
+                            node.setVisible(false);
+                            node.setManaged(false);
+                        }
+                    }
+                };
+                heightSlider.setMin(CSVFile.getCellsize());
+                heightSlider.setMax(changingStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
+                heightSlider.setValue(heightSlider.getMax());
+                heightSlider.setMinWidth(changingStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
+                heightSlider.valueProperty().addListener((
+                        ObservableValue<? extends Number> ov, Number old_val,
+                        Number new_val) -> {
+                    CSVFile.changeWidth(heightSlider.getValue(), heightSlider.getMax());
+                });
+                Label width = new Label("Adjust Width");
+                width.setTranslateX(RATIO_CONTENT_TO_WINDOW * changingStage.getWidth() / 2);
+                Slider widthSlider = new Slider() {
+                    @Override
+                    protected void layoutChildren() {
+                        super.layoutChildren();
+                        for (javafx.scene.Node node : lookupAll(".track")) {
+                            node.setVisible(false);
+                            node.setManaged(false);
+                        }
+                    }
+                };
+                widthSlider.setTranslateY(-20);
+                widthSlider.setOrientation(Orientation.VERTICAL);
+                widthSlider.setRotate(180);
+                widthSlider.setMin(CSVFile.getCellsize());
+                widthSlider.setMax(changingStage.getHeight());
+                widthSlider.setValue(widthSlider.getMax());
+                widthSlider.setMinHeight(screenHeight * RATIO_CONTENT_TO_WINDOW);
+                widthSlider.valueProperty().addListener((
+                        ObservableValue<? extends Number> ov, Number old_val,
+                        Number new_val) -> {
+                    CSVFile.changeHeight(widthSlider.getValue());
+                });
+                Label height = new Label("Adjust Height");
+                height.setTranslateY(screenHeight * RATIO_CONTENT_TO_WINDOW / 2);
+                height.setRotate(90);
+                var vBox = new VBox();
+                vBox.getChildren().addAll(CSVFile.getTableView(), heightSlider, width);
+                vBox.setMinWidth(CSVFile.getTableView().getMinWidth());
+                vBox.setAlignment(Pos.TOP_LEFT);
+                HBox hBox = new HBox();
+                VBox secondVbox = new VBox();
+                secondVbox.setLayoutY(0);
+                Label choice = new Label(
+                        "Current File: (" + String.valueOf(CSVFile.getDataList().size()) + " rows & "
+                                + CSVFile.getNumberOfColumns() + " columns)");
+                choice.setFont(Font.font(16));
+                Button buttonImport = new Button("Import your .csv file");
+                secondVbox.setSpacing(5);
+
+                Button plusButton = new Button("+");
+                plusButton.setOnAction(e -> {
+                    CSVFile.changeTextSize(Math.min(25, ++value));
+                    try {
+                        restart();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                });
+                plusButton.setPrefSize(25, 25);
+                Button minusButton = new Button("-");
+                minusButton.setPrefSize(25, 25);
+                minusButton.setOnAction(e -> {
+                    CSVFile.changeTextSize(Math.max(3, --value));
+                    try {
+                        restart();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                });
+                HBox miniHBox = new HBox();
+                miniHBox.setSpacing(5);
+                VBox minVBox = new VBox();
+                minVBox.setAlignment(Pos.CENTER);
+                minVBox.setSpacing(1);
+                minVBox.getChildren().addAll(
+                        new Text(" Zoom : " + (int) value * 100 / 12 + " %"), plusButton, minusButton);
+                miniHBox.getChildren().addAll(cb, minVBox);
+                secondVbox.getChildren().addAll(height, widthSlider, choice, miniHBox, buttonImport,
+                        new Text("Made by:"),
+                        hyperlink);
+                secondVbox.setAlignment(Pos.TOP_LEFT);
+                hBox.getChildren().addAll(vBox, secondVbox);
+                root.getChildren().addAll(hBox);
+                CSVFile.resetWidth(changingStage.getWidth() / CSVFile.getDesiredWidth());
+                Scene scene = new Scene(root, CSVFile.getDesiredWidth(), changingStage.getHeight());
+                if (actualFile != null)
+                    changingStage.setTitle("IMPORTED DATA -> " + actualFile.toString());
+                if (finished) {
+                    changingStage.setScene(scene);
+                    changingStage.show();
+                }
+                hyperlink.setOnAction(new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent e) {
+                        getHostServices().showDocument("https://www.github.com/leonlolleonlol");
+                    }
+                });
+                buttonImport.setOnAction(e -> {
+                    actualFile = new FileChooser().showOpenDialog(changingStage);
+                    // si on peut lire le file
+                    if (actualFile.exists() && actualFile.canRead()) {
+                        previousChoice = null;
+                        try {
+                            restart();
+                        } catch (IOException a) {
+                            a.printStackTrace();
+                        }
+                    }
+
+                });
+                cb.setOnAction((event) -> {
+                    previousChoice = cb.getSelectionModel().getSelectedItem();
+                    try {
+                        restart();
+                        changingStage.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            });
+        }
+    }
+
     class TaskTwo implements Runnable {
-        private Stage primaryStage;
         long startTime;
         ProgressIndicator pb = new ProgressIndicator();
-
-        public TaskTwo(Stage primaryStag) {
-            primaryStage = primaryStag;
-        }
 
         @Override
         public void run() {
@@ -238,13 +249,14 @@ public class HelloApplication extends Application {
                     public void handle(long now) {
                         long elapsedTime = now - startTime;
                         progress[0] = elapsedTime / 2e9; // Change this value to adjust the animation speed
-                        if (progress[0] > 1.016 && !finished) {
+                        if (progress[0] > 1.033 && !finished) {
                             progress[0] = 1.0;
                             stop();
                             try {
                                 Platform.runLater(() -> {
                                     try {
-                                        restart(primaryStage,false);
+                                        changingStage.close();
+                                        restart();
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }
@@ -261,8 +273,8 @@ public class HelloApplication extends Application {
                 timer.start();
                 if (pb.getProgress() < 1) {
                     Platform.runLater(() -> {
-                    primaryStage.setScene(new Scene(pb));
-                    primaryStage.show();
+                        changingStage.setScene(new Scene(pb));
+                        changingStage.show();
                     });
                 }
             }
