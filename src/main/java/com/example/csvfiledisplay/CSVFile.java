@@ -20,18 +20,16 @@ public class CSVFile {
     private static int[] maxes;
     private static TableView<Record> tableView;
     private static ObservableList<Record> dataList;
-    private static double screenSizeSaved;
     private static int numberOfColumns, desiredWidth, fontSize = 12;
-    private static final int FIXED_CELL_SIZE = 25;
     private static String lastChoice, fontSizeString = "-fx-font-size: " + fontSize + ";";
     private static ArrayList<String> header;
     private static TableColumn<Record, String>[] columns;
     private static File importedFile;
+    private static double cellSize = 25;
 
     public CSVFile(String file, double screenSize, File fileImport) throws IOException {
         lastChoice = file;
         importedFile = fileImport;
-        screenSizeSaved = screenSize;
         dataList = FXCollections.observableArrayList();
         tableView = new TableView<>();
         tableView.setTranslateX(0);
@@ -44,7 +42,7 @@ public class CSVFile {
             int index = i + 1;
             columns[i] = new TableColumn<>(header.get(index - 1));
             columns[i].setCellValueFactory(data -> data.getValue().getFieldProperty("f" + index));
-            tableView.setFixedCellSize(FIXED_CELL_SIZE);
+            tableView.setFixedCellSize(cellSize);
             columns[i].setStyle(fontSizeString);
             columns[i].setId(String.valueOf(index));
         }
@@ -55,6 +53,10 @@ public class CSVFile {
         changeHeight(screenSize);
     }
 
+    public static void setCellSize(double cellSize) {
+        CSVFile.cellSize = cellSize;
+    }
+
     public static void changeHeight(double newHeight) {
         tableView.setPrefHeight(newHeight * HelloApplication.RATIO_CONTENT_TO_WINDOW);
     }
@@ -62,6 +64,7 @@ public class CSVFile {
     public static void changeTextSize(int newSize) {
         fontSize = newSize;
         fontSizeString = "-fx-font-size: " + fontSize + ";";
+        setCellSize(newSize*25/12);
     }
 
     public static void changeWidth(double newWidth, double screenWidth) {
@@ -168,11 +171,6 @@ public class CSVFile {
 
     public ArrayList<String> checkForErrors(String[] fields, ArrayList<String> realFields) {
         for (int i = 0; i < numberOfColumns; i++) {
-            if (fields[i].contains("$") && fields[i + 1].matches("^[0-9]+(\\.[0-9]+)?(\"?)+$")) {
-                realFields.set(i, fields[i] + " " + fields[i + 1]);
-                realFields.remove(realFields.get(i + 1));
-                realFields.add("-");
-            }
             maxes[i] = Math.max(realFields.get(i).length(), maxes[i]);
         }
         return realFields;
@@ -183,8 +181,8 @@ public class CSVFile {
         return lastChoice;
     }
 
-    public static int getFixedCellSize() {
-        return FIXED_CELL_SIZE;
+    public static double getCellsize() {
+        return cellSize;
     }
 
     public static int[] getMaxes() {

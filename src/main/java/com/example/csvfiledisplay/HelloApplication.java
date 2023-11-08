@@ -3,6 +3,7 @@ package com.example.csvfiledisplay;
 import java.io.File;
 import java.io.IOException;
 
+import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -18,14 +19,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 
 public class HelloApplication extends Application {
     private static String previousChoice = "CATALOG_2023_09_19.csv";
@@ -34,19 +33,63 @@ public class HelloApplication extends Application {
     public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1300;
     private static Hyperlink hyperlink = new Hyperlink("www.github.com/leonlolleonlol");
     private static File actualFile = null;
-    private static double ii;
+    private static ProgressIndicator pb = new ProgressIndicator();
+    private long startTime;
+    private static boolean finished=false;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        ProgressIndicator pb = new ProgressIndicator();
-        primaryStage.setOnShown(new EventHandler<WindowEvent>() {
+        //TaskOne taskOne=new TaskOne();
+        //Thread thread1 = new Thread(taskOne);
+        //thread1.start();
+        if (!finished) {
+        startTime = System.nanoTime();
+        AnimationTimer timer = new AnimationTimer(){
             @Override
-            public void handle(WindowEvent event) {
-                ii += 0.1;
-                pb.setProgress(ii);
+            public void handle(long now) {
+                long elapsedTime = now - startTime;
+                double progress = elapsedTime / 1e9; // Change this value to adjust the animation speed
+                if (progress > 1.016&&!finished) {
+                    progress = 1.0;
+                    finished=true;
+                    try {
+                        primaryStage.setMaximized(true);
+                        restart(primaryStage);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    stop();
+                }
+                else
+                    pb.setProgress(progress);
             }
-        });
-        if (ii>10000) {
+        };
+        timer.start();
+        if (pb.getProgress()<1) {
+            primaryStage.setScene(new Scene(pb,100,100));
+            primaryStage.show();
+        }
+    }
+    else
+        performActionsAfterAnimation(primaryStage);
+    }
+
+    public static void reset() throws IOException {
+        new CSVFile(previousChoice, screenHeight, actualFile);
+        root = new Group();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+    public void restart(Stage primaryStage) throws IOException
+    {
+        primaryStage.close();
+        start(new Stage());
+    }
+
+    public void performActionsAfterAnimation(Stage primaryStage) throws IOException {
+        primaryStage.setMaximized(true);
         screenHeight = Screen.getPrimary().getVisualBounds().getHeight();
         primaryStage.setHeight(screenHeight);
         primaryStage.setWidth(Screen.getPrimary().getVisualBounds().getWidth());
@@ -70,7 +113,7 @@ public class HelloApplication extends Application {
                 }
             }
         };
-        heightSlider.setMin(CSVFile.getFixedCellSize());
+        heightSlider.setMin(CSVFile.getCellsize());
         heightSlider.setMax(primaryStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
         heightSlider.setValue(heightSlider.getMax());
         heightSlider.setMinWidth(primaryStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
@@ -94,7 +137,7 @@ public class HelloApplication extends Application {
         widthSlider.setTranslateY(-20);
         widthSlider.setOrientation(Orientation.VERTICAL);
         widthSlider.setRotate(180);
-        widthSlider.setMin(CSVFile.getFixedCellSize());
+        widthSlider.setMin(CSVFile.getCellsize());
         widthSlider.setMax(primaryStage.getHeight());
         widthSlider.setValue(widthSlider.getMax());
         widthSlider.setMinHeight(screenHeight * RATIO_CONTENT_TO_WINDOW);
@@ -118,7 +161,7 @@ public class HelloApplication extends Application {
         choice.setFont(Font.font(16));
         Button buttonImport = new Button("Import your .csv file");
         secondVbox.setSpacing(5);
-        Slider textSizeSlider = new Slider(7, 20, CSVFile.getFontSize());
+        Slider textSizeSlider = new Slider(1, 23, CSVFile.getFontSize());
         textSizeSlider.setBlockIncrement(1);
         textSizeSlider.valueProperty().addListener((
                 ObservableValue<? extends Number> ov, Number old_val,
@@ -133,7 +176,7 @@ public class HelloApplication extends Application {
         HBox miniHBox = new HBox();
         VBox minVBox = new VBox();
         minVBox.setAlignment(Pos.CENTER);
-        minVBox.getChildren().addAll(new Text("Change text font size"), textSizeSlider);
+        minVBox.getChildren().addAll(new Text("Zoom : "+(int)textSizeSlider.getValue()*100/12+" %"), textSizeSlider);
         miniHBox.getChildren().addAll(cb, minVBox);
         secondVbox.getChildren().addAll(height, widthSlider, choice, miniHBox, buttonImport, new Text("Made by:"),
                 hyperlink);
@@ -144,7 +187,6 @@ public class HelloApplication extends Application {
         Scene scene = new Scene(root, CSVFile.getDesiredWidth(), primaryStage.getHeight());
         if (actualFile != null)
             primaryStage.setTitle("IMPORTED DATA -> " + actualFile.toString());
-        primaryStage.setMaximized(true);
         primaryStage.setScene(scene);
         primaryStage.show();
         hyperlink.setOnAction(new EventHandler<ActionEvent>() {
@@ -159,8 +201,7 @@ public class HelloApplication extends Application {
             if (actualFile.exists() && actualFile.canRead()) {
                 previousChoice = null;
                 try {
-                    primaryStage.close();
-                    start(new Stage());
+                    restart(primaryStage);
                 } catch (IOException a) {
                     a.printStackTrace();
                 }
@@ -170,28 +211,22 @@ public class HelloApplication extends Application {
         cb.setOnAction((event) -> {
             previousChoice = cb.getSelectionModel().getSelectedItem();
             try {
-                primaryStage.close();
-                start(new Stage());
+                restart(primaryStage);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
     }
-    else
-    {
-    Scene sc = new Scene(new Pane(pb), 200, 200);
-    primaryStage.setScene(sc);
-    primaryStage.show();
-    }
-    }
+    static class TaskOne implements Runnable {
+        @Override
+        public void run() {
+                try {
+                    new CSVFile(previousChoice, screenHeight, actualFile);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+        }
 
-    public static void reset() throws IOException {
-        new CSVFile(previousChoice, screenHeight, actualFile);
-        root = new Group();
-    }
-
-    public static void main(String[] args) {
-        launch(args);
     }
 
 }
