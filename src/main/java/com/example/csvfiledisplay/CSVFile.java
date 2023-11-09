@@ -6,6 +6,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -20,12 +23,12 @@ public class CSVFile {
     private static int[] maxes;
     private static TableView<Record> tableView;
     private static ObservableList<Record> dataList;
-    private static int numberOfColumns, desiredWidth, fontSize = 12;
-    private static String lastChoice, fontSizeString = "-fx-font-size: " + fontSize + ";";
+    private static int numberOfColumns, desiredWidth;
     private static ArrayList<String> header;
     private static TableColumn<Record, String>[] columns;
     private static File importedFile;
-    private static double cellSize = 25;
+    private static double cellSize = 25, fontSize = 12;
+    private static String lastChoice, fontSizeString = "-fx-font-size: " + fontSize + ";";
 
     public CSVFile(String file, double screenSize, File fileImport) throws IOException {
         lastChoice = file;
@@ -61,10 +64,10 @@ public class CSVFile {
         tableView.setPrefHeight(newHeight * HelloApplication.RATIO_CONTENT_TO_WINDOW);
     }
 
-    public static void changeTextSize(int newSize) {
+    public static void changeTextSize(double newSize) {
         fontSize = newSize;
         fontSizeString = "-fx-font-size: " + fontSize + ";";
-        setCellSize(newSize*25/12);
+        setCellSize(newSize * 25 / 12);
     }
 
     public static void changeWidth(double newWidth, double screenWidth) {
@@ -165,6 +168,32 @@ public class CSVFile {
         }
     }
 
+    public static void download(File selectedFile, String previousChoice) {
+        try {
+            Path source = Paths.get(previousChoice); // Specify the path to your file
+            Path destination = Paths.get(System.getProperty("user.home"), "Downloads",
+                    selectedFile.getName());
+            byte[] data = Files.readAllBytes(source);
+            Files.write(destination, data);
+            String os = System.getProperty("os.name").toLowerCase();
+            Runtime rt = Runtime.getRuntime();
+            if (os.contains("win")) {
+                // For Windows
+                rt.exec("explorer.exe /select," + destination);
+            } else if (os.contains("mac")) {
+                // For Mac
+                rt.exec("open " + destination);
+            } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                // For Linux
+                rt.exec("xdg-open " + destination);
+            } else {
+                throw new UnsupportedOperationException("Operating system not supported");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public String[] transformArrayListToArray(ArrayList<String> a) {
         return a.toArray(new String[a.size()]);
     }
@@ -224,4 +253,9 @@ public class CSVFile {
     public static int getDesiredWidth() {
         return desiredWidth;
     }
+
+    public static void setFontSize(double fontSize) {
+        CSVFile.fontSize = fontSize;
+    }
+
 }

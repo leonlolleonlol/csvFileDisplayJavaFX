@@ -31,23 +31,22 @@ public class HelloApplication extends Application {
     private static String previousChoice = "CATALOG_2023_09_19.csv";
     private static Group root;
     private static double screenHeight;
-    public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1200;
+    public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1100;
     private static Hyperlink hyperlink = new Hyperlink("www.github.com/leonlolleonlol");
     private static File actualFile = null;
     private static boolean finished = false;
-    private int value = 12;
+    private static double value = CSVFile.getFontSize();
     private Stage changingStage;
+    private static int numberOfTimesPassedHere=0;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
         changingStage = primaryStage;
         changingStage.setMaximized(true);
-        TaskTwo taskTwo = new TaskTwo();
-        Thread thread2 = new Thread(taskTwo);
+        TaskAnimation taskAnimation = new TaskAnimation();
+        Thread thread2 = new Thread(taskAnimation);
         thread2.start();
-        TaskThree taskThree = new TaskThree();
-        Thread thread3 = new Thread(taskThree);
-        thread3.start();
+        restart();
     }
 
     public static void main(String[] args) {
@@ -55,21 +54,21 @@ public class HelloApplication extends Application {
     }
 
     public void restart() throws IOException {
-        TaskThree taskThree = new TaskThree();
-        Thread thread3 = new Thread(taskThree);
+        TaskLoadCVSFile taskLoadCVSFile = new TaskLoadCVSFile();
+        Thread thread3 = new Thread(taskLoadCVSFile);
         thread3.start();
         try {
             thread3.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        finished=true;
-        TaskOne taskOne = new TaskOne();
-        Thread thread1 = new Thread(taskOne);
+        finished = true;
+        TaskDisplayTable taskDisplayTable = new TaskDisplayTable();
+        Thread thread1 = new Thread(taskDisplayTable);
         thread1.start();
     }
 
-    class TaskThree implements Runnable {
+    class TaskLoadCVSFile implements Runnable {
 
         @Override
         public void run() {
@@ -83,7 +82,7 @@ public class HelloApplication extends Application {
         }
     }
 
-    class TaskOne implements Runnable {
+    class TaskDisplayTable implements Runnable {
         @Override
         public void run() {
             Platform.runLater(() -> {
@@ -159,11 +158,13 @@ public class HelloApplication extends Application {
                                 + CSVFile.getNumberOfColumns() + " columns)");
                 choice.setFont(Font.font(16));
                 Button buttonImport = new Button("Import your .csv file");
-                secondVbox.setSpacing(5);
-
+                secondVbox.setSpacing(1);
                 Button plusButton = new Button("+");
+                if (value > 23)
+                    plusButton.setVisible(false);
                 plusButton.setOnAction(e -> {
-                    CSVFile.changeTextSize(Math.min(25, ++value));
+                    value += 1.2;
+                    CSVFile.changeTextSize(value);
                     try {
                         restart();
                     } catch (IOException e1) {
@@ -173,25 +174,34 @@ public class HelloApplication extends Application {
                 plusButton.setPrefSize(25, 25);
                 Button minusButton = new Button("-");
                 minusButton.setPrefSize(25, 25);
+                if (value < 2)
+                    minusButton.setVisible(false);
                 minusButton.setOnAction(e -> {
-                    CSVFile.changeTextSize(Math.max(3, --value));
+                    value -= 1.2;
+                    CSVFile.changeTextSize(value);
                     try {
                         restart();
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
                 });
+                Button btn = new Button();
+                btn.setText("Download File");
+                btn.setOnAction(event -> {
+                    File selectedFile = new File(previousChoice);
+                    if (selectedFile != null) {
+                        CSVFile.download(selectedFile, previousChoice);
+                    }
+                });
                 HBox miniHBox = new HBox();
-                miniHBox.setSpacing(5);
-                VBox minVBox = new VBox();
-                minVBox.setAlignment(Pos.CENTER);
-                minVBox.setSpacing(1);
-                minVBox.getChildren().addAll(
-                        new Text(" Zoom : " + (int) value * 100 / 12 + " %"), plusButton, minusButton);
-                miniHBox.getChildren().addAll(cb, minVBox);
-                secondVbox.getChildren().addAll(height, widthSlider, choice, miniHBox, buttonImport,
+                miniHBox.setSpacing(1);
+                miniHBox.setAlignment(Pos.TOP_LEFT);
+                miniHBox.getChildren().addAll(cb,
+                        new Text(" Zoom : " + Math.round(value * 100 / 12) + " %"), plusButton, minusButton);
+                secondVbox.getChildren().addAll(height, widthSlider, choice, miniHBox, buttonImport, btn,
                         new Text("Made by:"),
                         hyperlink);
+                secondVbox.setSpacing(1);
                 secondVbox.setAlignment(Pos.TOP_LEFT);
                 hBox.getChildren().addAll(vBox, secondVbox);
                 root.getChildren().addAll(hBox);
@@ -202,6 +212,15 @@ public class HelloApplication extends Application {
                 if (finished) {
                     changingStage.setScene(scene);
                     changingStage.show();
+                    numberOfTimesPassedHere++;
+                }
+                if(numberOfTimesPassedHere==1)
+                {
+                    try {
+                        restart();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                 }
                 hyperlink.setOnAction(new EventHandler<ActionEvent>() {
                     @Override
@@ -235,7 +254,7 @@ public class HelloApplication extends Application {
         }
     }
 
-    class TaskTwo implements Runnable {
+    class TaskAnimation implements Runnable {
         long startTime;
         ProgressIndicator pb = new ProgressIndicator();
 
