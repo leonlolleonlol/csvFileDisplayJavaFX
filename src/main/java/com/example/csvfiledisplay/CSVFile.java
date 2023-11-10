@@ -56,9 +56,9 @@ public class CSVFile {
         changeHeight(screenSize);
         takemeToThisLine(0);
     }
-    public static void takemeToThisLine(int lineNumber)
-    {
-        if(lineNumber>-1&&lineNumber<dataList.size()-1)
+
+    public static void takemeToThisLine(int lineNumber) {
+        if (lineNumber > -1 && lineNumber < dataList.size() - 1)
             tableView.scrollTo(lineNumber);
     }
 
@@ -174,6 +174,23 @@ public class CSVFile {
         }
     }
 
+    private static void openExplorer(Path destination) throws IOException {
+        String os = System.getProperty("os.name").toLowerCase();
+        Runtime rt = Runtime.getRuntime();
+        if (os.contains("win")) {
+            // For Windows
+            rt.exec("explorer.exe /select," + destination);
+        } else if (os.contains("mac")) {
+            // For Mac
+            rt.exec("open " + destination);
+        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+            // For Linux
+            rt.exec("xdg-open " + destination);
+        } else {
+            throw new UnsupportedOperationException("Operating system not supported");
+        }
+    }
+
     public static void download(File selectedFile, String previousChoice) {
         try {
             Path source = Paths.get(previousChoice); // Specify the path to your file
@@ -181,20 +198,18 @@ public class CSVFile {
                     selectedFile.getName());
             byte[] data = Files.readAllBytes(source);
             Files.write(destination, data);
-            String os = System.getProperty("os.name").toLowerCase();
-            Runtime rt = Runtime.getRuntime();
-            if (os.contains("win")) {
-                // For Windows
-                rt.exec("explorer.exe /select," + destination);
-            } else if (os.contains("mac")) {
-                // For Mac
-                rt.exec("open " + destination);
-            } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                // For Linux
-                rt.exec("xdg-open " + destination);
-            } else {
-                throw new UnsupportedOperationException("Operating system not supported");
-            }
+            openExplorer(destination);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public static void upload(File selectedFile, String previousChoice) {
+        try {
+            Path source = Paths.get(previousChoice); // Specify the path to your file
+            Path destination = Paths.get(System.getProperty("user.home"), "Downloads",
+                    selectedFile.getName());
+            byte[] data = Files.readAllBytes(destination);
+            Files.write(source, data);
         } catch (IOException e) {
             e.printStackTrace();
         }
