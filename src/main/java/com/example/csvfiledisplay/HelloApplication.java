@@ -19,6 +19,8 @@ import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -37,15 +39,13 @@ public class HelloApplication extends Application {
     private static boolean finished = false;
     private static double value = CSVFile.getFontSize();
     private Stage changingStage;
-    private static int numberOfTimesPassedHere=0;
+    private static int numberOfTimesPassedHere = 0;
+    private static boolean iJustPressedAkey = false;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
         changingStage = primaryStage;
         changingStage.setMaximized(true);
-        TaskAnimation taskAnimation = new TaskAnimation();
-        Thread thread2 = new Thread(taskAnimation);
-        thread2.start();
         restart();
     }
 
@@ -56,7 +56,12 @@ public class HelloApplication extends Application {
     public void restart() throws IOException {
         TaskLoadCVSFile taskLoadCVSFile = new TaskLoadCVSFile();
         Thread thread3 = new Thread(taskLoadCVSFile);
+        thread3.setPriority(5);
+        TaskAnimation taskAnimation = new TaskAnimation();
+        Thread thread2 = new Thread(taskAnimation);
+        thread2.start();
         thread3.start();
+        thread2.setPriority(8);
         try {
             thread3.join();
         } catch (InterruptedException e) {
@@ -158,18 +163,18 @@ public class HelloApplication extends Application {
                                 + CSVFile.getNumberOfColumns() + " columns)");
                 choice.setFont(Font.font(16));
                 Button buttonImport = new Button("Import your .csv file");
-                secondVbox.setSpacing(1);
+                var hBoxLineNumber = new HBox();
+                hBoxLineNumber.setSpacing(5);
+                TextField numberTextField = new TextField();
+                numberTextField.setPromptText("0");
+                numberTextField.setPrefWidth(50);
+                hBoxLineNumber.getChildren().addAll(buttonImport, new Text("Starting from line "), numberTextField);
+                secondVbox.setSpacing(5);
                 Button plusButton = new Button("+");
                 if (value > 23)
                     plusButton.setVisible(false);
                 plusButton.setOnAction(e -> {
-                    value += 1.2;
-                    CSVFile.changeTextSize(value);
-                    try {
-                        restart();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
+                    zoomInOut(1);
                 });
                 plusButton.setPrefSize(25, 25);
                 Button minusButton = new Button("-");
@@ -177,13 +182,7 @@ public class HelloApplication extends Application {
                 if (value < 2)
                     minusButton.setVisible(false);
                 minusButton.setOnAction(e -> {
-                    value -= 1.2;
-                    CSVFile.changeTextSize(value);
-                    try {
-                        restart();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
+                    zoomInOut(-1);
                 });
                 Button btn = new Button();
                 btn.setText("Download File");
@@ -194,19 +193,61 @@ public class HelloApplication extends Application {
                     }
                 });
                 HBox miniHBox = new HBox();
-                miniHBox.setSpacing(1);
+                miniHBox.setSpacing(5);
                 miniHBox.setAlignment(Pos.TOP_LEFT);
                 miniHBox.getChildren().addAll(cb,
-                        new Text(" Zoom : " + Math.round(value * 100 / 12) + " %"), plusButton, minusButton);
-                secondVbox.getChildren().addAll(height, widthSlider, choice, miniHBox, buttonImport, btn,
+                        new Text(" Zoom : " + Math.round(value * 100 / 12) + " %"), minusButton, plusButton);
+                var bigPortionVBox = new VBox();
+                bigPortionVBox.getChildren().addAll(height, widthSlider);
+                var smallPortionVBox = new VBox();
+                smallPortionVBox.getChildren().addAll(choice, miniHBox, hBoxLineNumber, btn,
                         new Text("Made by:"),
                         hyperlink);
-                secondVbox.setSpacing(1);
+                smallPortionVBox.setAlignment(Pos.TOP_LEFT);
+                smallPortionVBox.setTranslateY(-25);
+                smallPortionVBox.setSpacing(5);
+                secondVbox.getChildren().addAll(bigPortionVBox, smallPortionVBox);
+                secondVbox.setSpacing(5);
                 secondVbox.setAlignment(Pos.TOP_LEFT);
                 hBox.getChildren().addAll(vBox, secondVbox);
                 root.getChildren().addAll(hBox);
                 CSVFile.resetWidth(changingStage.getWidth() / CSVFile.getDesiredWidth());
                 Scene scene = new Scene(root, CSVFile.getDesiredWidth(), changingStage.getHeight());
+                scene.setOnKeyPressed((event) -> {
+                    if (!iJustPressedAkey) {
+                        if (event.getCode() == KeyCode.ESCAPE) {
+                            Platform.exit();
+                        }
+                        if (event.getCode() == KeyCode.ENTER) {
+                            boolean niceFormat = false;
+                            numberTextField.getStyleClass().removeAll();
+                            int row = 0;
+                            try {
+                                row = Integer.parseInt(numberTextField.getText());
+                                niceFormat = true;
+                                if (niceFormat)
+                                    numberTextField.setStyle("-fx-border-color: green;");
+                            } catch (Exception e) {
+                                numberTextField.setStyle("-fx-border-color: red;");
+                            }
+                            CSVFile.takemeToThisLine(row);
+                        }
+                        if ((event.getCode() == KeyCode.ADD || event.getCode() == KeyCode.PLUS) && !(value > 23)) {
+                            zoomInOut(1);
+                        }
+                        if ((event.getCode() == KeyCode.SUBTRACT || event.getCode() == KeyCode.MINUS) && !(value < 2)) {
+                            zoomInOut(-1);
+                        }
+                        iJustPressedAkey = true;
+                        try {
+                            Thread.sleep(333);
+                        } catch (InterruptedException e1) {
+                            e1.printStackTrace();
+                        }
+                        event.consume();
+                        Platform.runLater(() -> iJustPressedAkey = false);
+                    }
+                });
                 if (actualFile != null)
                     changingStage.setTitle("IMPORTED DATA -> " + actualFile.toString());
                 if (finished) {
@@ -214,8 +255,7 @@ public class HelloApplication extends Application {
                     changingStage.show();
                     numberOfTimesPassedHere++;
                 }
-                if(numberOfTimesPassedHere==1)
-                {
+                if (numberOfTimesPassedHere == 1) {
                     try {
                         restart();
                     } catch (IOException e1) {
@@ -283,7 +323,6 @@ public class HelloApplication extends Application {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                            finished = true;
                         } else {
                             Platform.runLater(() -> pb.setProgress(progress[0]));
                         }
@@ -296,7 +335,18 @@ public class HelloApplication extends Application {
                         changingStage.show();
                     });
                 }
-            }
+            } else
+                Thread.currentThread().interrupt();
+        }
+    }
+
+    private void zoomInOut(int i) {
+        value = 1.2 * i + value;
+        CSVFile.changeTextSize(value);
+        try {
+            restart();
+        } catch (IOException e1) {
+            e1.printStackTrace();
         }
     }
 

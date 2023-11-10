@@ -54,6 +54,12 @@ public class CSVFile {
             tableView.getColumns().add(i);
         resetWidth(1);
         changeHeight(screenSize);
+        takemeToThisLine(0);
+    }
+    public static void takemeToThisLine(int lineNumber)
+    {
+        if(lineNumber>-1&&lineNumber<dataList.size()-1)
+            tableView.scrollTo(lineNumber);
     }
 
     public static void setCellSize(double cellSize) {
