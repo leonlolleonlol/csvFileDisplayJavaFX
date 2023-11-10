@@ -19,7 +19,7 @@ import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Slider;
-import javafx.scene.control.TextField;
+import javafx.scene.control.Spinner;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -105,37 +105,15 @@ public class HelloApplication extends Application {
                     changingStage.setTitle("CONCORDIA'S OPEN DATA -> " + previousChoice);
                 }
                 cb.setValue(previousChoice);
-                Slider heightSlider = new Slider() {
-                    @Override
-                    protected void layoutChildren() {
-                        super.layoutChildren();
-                        for (javafx.scene.Node node : lookupAll(".track")) {
-                            node.setVisible(false);
-                            node.setManaged(false);
-                        }
-                    }
-                };
+                Slider heightSlider = new Slider();
                 heightSlider.setMin(CSVFile.getCellsize());
                 heightSlider.setMax(changingStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
                 heightSlider.setValue(heightSlider.getMax());
                 heightSlider.setMinWidth(changingStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
-                heightSlider.valueProperty().addListener((
-                        ObservableValue<? extends Number> ov, Number old_val,
-                        Number new_val) -> {
-                    CSVFile.changeWidth(heightSlider.getValue(), heightSlider.getMax());
-                });
+
                 Label width = new Label("Adjust Width");
                 width.setTranslateX(RATIO_CONTENT_TO_WINDOW * changingStage.getWidth() / 2);
-                Slider widthSlider = new Slider() {
-                    @Override
-                    protected void layoutChildren() {
-                        super.layoutChildren();
-                        for (javafx.scene.Node node : lookupAll(".track")) {
-                            node.setVisible(false);
-                            node.setManaged(false);
-                        }
-                    }
-                };
+                Slider widthSlider = new Slider();
                 widthSlider.setTranslateY(-20);
                 widthSlider.setOrientation(Orientation.VERTICAL);
                 widthSlider.setRotate(180);
@@ -143,11 +121,6 @@ public class HelloApplication extends Application {
                 widthSlider.setMax(changingStage.getHeight());
                 widthSlider.setValue(widthSlider.getMax());
                 widthSlider.setMinHeight(screenHeight * RATIO_CONTENT_TO_WINDOW);
-                widthSlider.valueProperty().addListener((
-                        ObservableValue<? extends Number> ov, Number old_val,
-                        Number new_val) -> {
-                    CSVFile.changeHeight(widthSlider.getValue());
-                });
                 Label height = new Label("Adjust Height");
                 height.setTranslateY(screenHeight * RATIO_CONTENT_TO_WINDOW / 2);
                 height.setRotate(90);
@@ -165,10 +138,16 @@ public class HelloApplication extends Application {
                 Button buttonImport = new Button("Import your .csv file");
                 var hBoxLineNumber = new HBox();
                 hBoxLineNumber.setSpacing(5);
-                TextField numberTextField = new TextField();
-                numberTextField.setPromptText("0");
-                numberTextField.setPrefWidth(50);
-                hBoxLineNumber.getChildren().addAll(buttonImport, new Text("Starting from line "), numberTextField);
+                Spinner<Integer> spinner = new Spinner<>(
+                        new InvertedSpinnerValueFactory(0, CSVFile.getDataList().size(), 0, 1));
+                // Configure the spinner to wrap around when reaching the minimum or maximum
+                // value
+                spinner.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    CSVFile.takemeToThisLine(newValue);
+                });
+                spinner.setEditable(true);
+                spinner.setPrefWidth(140);
+                hBoxLineNumber.getChildren().addAll(buttonImport, new Text("Starting from line "), spinner);
                 secondVbox.setSpacing(5);
                 Button plusButton = new Button("+");
                 if (value > 23)
@@ -206,7 +185,23 @@ public class HelloApplication extends Application {
                 smallPortionVBox.setAlignment(Pos.TOP_LEFT);
                 smallPortionVBox.setTranslateY(-25);
                 smallPortionVBox.setSpacing(5);
+                widthSlider.valueProperty().addListener((
+                        ObservableValue<? extends Number> ov, Number old_val,
+                        Number new_val) -> {
+                    CSVFile.changeHeight(widthSlider.getValue());
+                    smallPortionVBox.setTranslateY(
+                            widthSlider.getValue() * RATIO_CONTENT_TO_WINDOW - changingStage.getHeight()
+                                    + smallPortionVBox.getHeight() + 20);
+                });
                 secondVbox.getChildren().addAll(bigPortionVBox, smallPortionVBox);
+                heightSlider.valueProperty().addListener((
+                        ObservableValue<? extends Number> ov, Number old_val,
+                        Number new_val) -> {
+                    CSVFile.changeWidth(heightSlider.getValue(), heightSlider.getMax());
+                    System.out.println(heightSlider.getValue() - changingStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
+                    secondVbox.setTranslateX(
+                            heightSlider.getValue() - changingStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
+                });
                 secondVbox.setSpacing(5);
                 secondVbox.setAlignment(Pos.TOP_LEFT);
                 hBox.getChildren().addAll(vBox, secondVbox);
@@ -219,18 +214,7 @@ public class HelloApplication extends Application {
                             Platform.exit();
                         }
                         if (event.getCode() == KeyCode.ENTER) {
-                            boolean niceFormat = false;
-                            numberTextField.getStyleClass().removeAll();
-                            int row = 0;
-                            try {
-                                row = Integer.parseInt(numberTextField.getText());
-                                niceFormat = true;
-                                if (niceFormat)
-                                    numberTextField.setStyle("-fx-border-color: green;");
-                            } catch (Exception e) {
-                                numberTextField.setStyle("-fx-border-color: red;");
-                            }
-                            CSVFile.takemeToThisLine(row);
+                            CSVFile.takemeToThisLine(spinner.getValue());
                         }
                         if ((event.getCode() == KeyCode.ADD || event.getCode() == KeyCode.PLUS) && !(value > 23)) {
                             zoomInOut(1);
