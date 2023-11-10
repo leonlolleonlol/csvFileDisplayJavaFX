@@ -35,6 +35,7 @@ public class CSVFile {
         importedFile = fileImport;
         dataList = FXCollections.observableArrayList();
         tableView = new TableView<>();
+        tableView.setEditable(true);
         tableView.setTranslateX(0);
         maxes = null;
         header = null;
