@@ -22,6 +22,7 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -31,14 +32,14 @@ import javafx.stage.Stage;
 
 public class HelloApplication extends Application {
     private static String previousChoice = "CATALOG_2023_09_19.csv";
-    private static Group root;
-    public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1100;
+    public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1150;
     private static Hyperlink hyperlink = new Hyperlink("www.github.com/leonlolleonlol");
     private static File actualFile = null;
     private static boolean finished, iJustPressedAkey = false;
     private static double screenHeight, value = CSVFile.getFontSize();
     private Stage changingStage;
     private static ChoiceBox<String> cb = new ChoiceBox<>();
+    private static File importedFile;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
@@ -72,10 +73,10 @@ public class HelloApplication extends Application {
             e.printStackTrace();
         }
         finished = true;
-        TaskDisplayTable taskDisplayTable = new TaskDisplayTable();
+        TaskDisplayTable taskDisplayTable = new TaskDisplayTable(new Group());
         Thread thread1 = new Thread(taskDisplayTable);
         cb.setValue(previousChoice);
-        root = new Group();
+        cb.setStyle("-fx-font-family: Arial; -fx-font-size: "+(25*Math.pow(Math.E,-0.1*cb.getItems().size())+4)+"px;");
         thread1.start();
     }
 
@@ -104,9 +105,16 @@ public class HelloApplication extends Application {
     }
 
     class TaskDisplayTable implements Runnable {
+        private final Group root;
+
+        public TaskDisplayTable(Group root) {
+            this.root = root;
+        }
+
         @Override
         public void run() {
             Platform.runLater(() -> {
+                root.getChildren().clear(); // Clear the children before adding new nodes
                 Slider heightSlider = new Slider();
                 heightSlider.setMin(CSVFile.getCellsize());
                 heightSlider.setMax(changingStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
@@ -181,21 +189,29 @@ public class HelloApplication extends Application {
                 var bigPortionVBox = new VBox();
                 bigPortionVBox.getChildren().addAll(height, widthSlider);
                 var smallPortionVBox = new VBox();
+                smallPortionVBox.setStyle("-fx-background-color: #f0f0f0;");
                 smallPortionVBox.getChildren().addAll(choice, miniHBox, hBoxLineNumber, btn,
                         new Text("Made by:"),
                         hyperlink);
                 smallPortionVBox.setAlignment(Pos.TOP_LEFT);
                 smallPortionVBox.setTranslateY(-25);
                 smallPortionVBox.setSpacing(5);
+                var smallBackVBox = new VBox();
+                smallBackVBox.setMinSize(changingStage.getWidth(), changingStage.getHeight());
+                smallBackVBox.setTranslateX(smallPortionVBox.getTranslateX());
+                smallBackVBox.setStyle("-fx-background-color: #f0f0f0;");
                 widthSlider.valueProperty().addListener((
                         ObservableValue<? extends Number> ov, Number old_val,
                         Number new_val) -> {
                     CSVFile.changeHeight(widthSlider.getValue());
-                    smallPortionVBox.setTranslateY(
+                    smallBackVBox.setTranslateY(
                             widthSlider.getValue() * RATIO_CONTENT_TO_WINDOW - changingStage.getHeight()
-                                    + smallPortionVBox.getHeight() + 20);
+                                    + smallPortionVBox.getHeight() + 25);
+                    smallPortionVBox.setTranslateY(0);
+
                 });
-                secondVbox.getChildren().addAll(bigPortionVBox, smallPortionVBox);
+                smallBackVBox.getChildren().add(smallPortionVBox);
+                secondVbox.getChildren().addAll(bigPortionVBox, smallBackVBox);
                 heightSlider.valueProperty().addListener((
                         ObservableValue<? extends Number> ov, Number old_val,
                         Number new_val) -> {
@@ -233,8 +249,8 @@ public class HelloApplication extends Application {
                         Platform.runLater(() -> iJustPressedAkey = false);
                     }
                 });
-                if (actualFile != null)
-                    changingStage.setTitle("IMPORTED DATA -> " + actualFile.toString());
+                if (importedFile!=null)
+                    changingStage.setTitle("IMPORTED DATA -> " + importedFile.getName());
                 if (finished) {
                     changingStage.setScene(scene);
                     changingStage.show();
@@ -246,16 +262,15 @@ public class HelloApplication extends Application {
                     }
                 });
                 buttonImport.setOnAction(e -> {
-                    File importedFile = new FileChooser().showOpenDialog(changingStage);
-                    Platform.runLater(()->previousChoice=importedFile.getName());
-                    CSVFile.upload(importedFile,importedFile.getName());
+                    importedFile = new FileChooser().showOpenDialog(changingStage);
+                    Platform.runLater(() -> previousChoice = importedFile.getName());
+                    CSVFile.upload(importedFile, importedFile.getName());
                     cb.getItems().add(importedFile.getName());
-                        try {
-                            restart();
-                        } catch (IOException a) {
-                            a.printStackTrace();
-                        }
-                    
+                    try {
+                        restart();
+                    } catch (IOException a) {
+                        a.printStackTrace();
+                    }
 
                 });
                 cb.setOnAction((event) -> {
@@ -267,7 +282,9 @@ public class HelloApplication extends Application {
                         e.printStackTrace();
                     }
                 });
+            
             });
+        
         }
     }
 
@@ -306,10 +323,16 @@ public class HelloApplication extends Application {
                     }
                 };
                 timer.start();
-                if (pb.getProgress() < 1) {
+                if (!finished) {
                     Platform.runLater(() -> {
-                        changingStage.setScene(new Scene(pb));
+                        var vBox=new StackPane();
+                        vBox.getChildren().add(pb);
+                        vBox.setPrefSize(100,100);
+                        vBox.setTranslateX(0);
+                        vBox.setTranslateY(0);
+                        changingStage.setScene(new Scene(vBox));
                         changingStage.show();
+                        
                     });
                 }
             } else
