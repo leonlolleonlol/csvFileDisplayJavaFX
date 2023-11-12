@@ -20,6 +20,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -49,6 +50,8 @@ public class HelloApplication extends Application {
                 "CATALOG_2022_08_16.csv", "CATALOG_2023_09_19.csv", "CATALOG.csv",
                 "CU_SR_OPEN_DATA_TERM_SESS.csv",
                 "DATA_OUTPUT.csv", "FacList.csv", "POINT_LIST.csv", "BUILDING_LIST.csv", "WASTE_TYPE.csv");
+        changingStage.getIcons().add(new Image("file:download.png"));
+
         restart();
     }
 
@@ -76,7 +79,8 @@ public class HelloApplication extends Application {
         TaskDisplayTable taskDisplayTable = new TaskDisplayTable(new Group());
         Thread thread1 = new Thread(taskDisplayTable);
         cb.setValue(previousChoice);
-        cb.setStyle("-fx-font-family: Arial; -fx-font-size: "+(25*Math.pow(Math.E,-0.1*cb.getItems().size())+4)+"px;");
+        cb.setStyle("-fx-font-family: Arial; -fx-font-size: " + (25 * Math.pow(Math.E, -0.1 * cb.getItems().size()) + 4)
+                + "px;");
         thread1.start();
     }
 
@@ -181,11 +185,16 @@ public class HelloApplication extends Application {
                         CSVFile.download(selectedFile, previousChoice);
                     }
                 });
+                Button resetZoom = new Button("reset");
+                resetZoom.setOnAction(e -> {
+                    zoomInOut(0);
+                });
+                resetZoom.setPrefSize(50, 25);
                 HBox miniHBox = new HBox();
                 miniHBox.setSpacing(5);
                 miniHBox.setAlignment(Pos.TOP_LEFT);
                 miniHBox.getChildren().addAll(cb,
-                        new Text(" Zoom : " + Math.round(value * 100 / 12) + " %"), minusButton, plusButton);
+                        new Text(" Zoom : " + Math.round(value * 100 / 12) + " %"), minusButton, plusButton, resetZoom);
                 var bigPortionVBox = new VBox();
                 bigPortionVBox.getChildren().addAll(height, widthSlider);
                 var smallPortionVBox = new VBox();
@@ -249,7 +258,7 @@ public class HelloApplication extends Application {
                         Platform.runLater(() -> iJustPressedAkey = false);
                     }
                 });
-                if (importedFile!=null)
+                if (importedFile != null)
                     changingStage.setTitle("IMPORTED DATA -> " + importedFile.getName());
                 if (finished) {
                     changingStage.setScene(scene);
@@ -282,9 +291,9 @@ public class HelloApplication extends Application {
                         e.printStackTrace();
                     }
                 });
-            
+
             });
-        
+
         }
     }
 
@@ -325,14 +334,13 @@ public class HelloApplication extends Application {
                 timer.start();
                 if (!finished) {
                     Platform.runLater(() -> {
-                        var vBox=new StackPane();
+                        var vBox = new StackPane();
                         vBox.getChildren().add(pb);
-                        vBox.setPrefSize(100,100);
+                        vBox.setPrefSize(100, 100);
                         vBox.setTranslateX(0);
                         vBox.setTranslateY(0);
                         changingStage.setScene(new Scene(vBox));
                         changingStage.show();
-                        
                     });
                 }
             } else

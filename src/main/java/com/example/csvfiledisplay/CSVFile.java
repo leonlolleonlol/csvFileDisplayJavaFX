@@ -162,13 +162,13 @@ public class CSVFile {
                     if (fields[n].length() > 1) {
                         String characterToString = String.valueOf(fields[n].charAt(0));
                         if (characterToString.matches("[a-z]"))
-                            fields[n] = String.valueOf(characterToString).toUpperCase() + fields[n].substring(1);
+                            fields[n] = characterToString.toUpperCase() + fields[n].substring(1);
                         else if (characterToString.matches(" "))
                             fields[n] = fields[n].substring(1);
                     }
                     realFields.add(fields[n]);
                 }
-                realFields = checkForErrors(fields, realFields);
+                realFields = updateMaxes(fields, realFields);
                 Record record = new Record(transformArrayListToArray(names), transformArrayListToArray(realFields));
                 dataList.add(record);
             }
@@ -220,7 +220,7 @@ public class CSVFile {
         return a.toArray(new String[a.size()]);
     }
 
-    public ArrayList<String> checkForErrors(String[] fields, ArrayList<String> realFields) {
+    public ArrayList<String> updateMaxes(String[] fields, ArrayList<String> realFields) {
         for (int i = 0; i < numberOfColumns; i++) {
             maxes[i] = Math.max(realFields.get(i).length(), maxes[i]);
         }
