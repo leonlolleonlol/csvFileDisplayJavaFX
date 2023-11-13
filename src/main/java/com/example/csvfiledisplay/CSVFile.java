@@ -26,13 +26,11 @@ public class CSVFile {
     private static int numberOfColumns, desiredWidth;
     private static ArrayList<String> header;
     private static TableColumn<Record, String>[] columns;
-    private static File importedFile;
     private static double cellSize = 25, fontSize = 12;
     private static String lastChoice, fontSizeString = "-fx-font-size: " + fontSize + ";";
 
-    public CSVFile(String file, double screenSize, File fileImport) throws IOException {
+    public CSVFile(String file, double screenSize) throws IOException {
         lastChoice = file;
-        importedFile = fileImport;
         dataList = FXCollections.observableArrayList();
         tableView = new TableView<>();
         tableView.setEditable(true);
@@ -93,9 +91,6 @@ public class CSVFile {
     public static BufferedReader checkFile() {
         BufferedReader b = null;
         try {
-            if (lastChoice == null)
-                b = new BufferedReader(new FileReader(importedFile, UTF_8));
-            else
                 b = new BufferedReader(new FileReader(lastChoice, UTF_8));
             if (lastChoice != null && lastChoice.equals("DATA_OUTPUT.csv"))
                 for (int i = 0; i < 17; i++)
@@ -279,5 +274,6 @@ public class CSVFile {
     public static void setFontSize(double fontSize) {
         CSVFile.fontSize = fontSize;
     }
+    
 
 }

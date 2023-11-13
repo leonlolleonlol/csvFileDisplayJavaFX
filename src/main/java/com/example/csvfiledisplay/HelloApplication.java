@@ -35,12 +35,12 @@ public class HelloApplication extends Application {
     private static String previousChoice = "CATALOG_2023_09_19.csv";
     public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1150;
     private static Hyperlink hyperlink = new Hyperlink("www.github.com/leonlolleonlol");
-    private static File actualFile = null;
-    private static boolean finished, iJustPressedAkey = false;
+    private static boolean actualFileImported = false,finished, iJustPressedAkey = false;
     private static double screenHeight, value = CSVFile.getFontSize();
     private Stage changingStage;
     private static ChoiceBox<String> cb = new ChoiceBox<>();
     private static File importedFile;
+    private static int antiSpamRestarts=0,numberOfImports=0;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
@@ -52,7 +52,8 @@ public class HelloApplication extends Application {
                 "DATA_OUTPUT.csv", "FacList.csv", "POINT_LIST.csv", "BUILDING_LIST.csv", "WASTE_TYPE.csv");
         changingStage.getIcons().add(new Image("file:download.png"));
 
-        restart();
+        cb.setValue(previousChoice);
+        choiceBoxUpdate();
     }
 
     public static void main(String[] args) {
@@ -76,12 +77,14 @@ public class HelloApplication extends Application {
             e.printStackTrace();
         }
         finished = true;
-        TaskDisplayTable taskDisplayTable = new TaskDisplayTable(new Group());
-        Thread thread1 = new Thread(taskDisplayTable);
-        cb.setValue(previousChoice);
-        cb.setStyle("-fx-font-family: Arial; -fx-font-size: " + (25 * Math.pow(Math.E, -0.1 * cb.getItems().size()) + 4)
-                + "px;");
-        thread1.start();
+        Platform.runLater(() -> {
+            TaskDisplayTable taskDisplayTable = new TaskDisplayTable(new Group());
+            Thread thread1 = new Thread(taskDisplayTable);
+            cb.setStyle(
+                    "-fx-font-family: Arial; -fx-font-size: " + (25 * Math.pow(Math.E, -0.1 * cb.getItems().size()) + 4)
+                            + "px;");
+            thread1.start();
+        });
     }
 
     class TaskLoadCVSFile implements Runnable {
@@ -90,7 +93,7 @@ public class HelloApplication extends Application {
         public void run() {
             Platform.runLater(() -> {
                 try {
-                    new CSVFile(previousChoice, screenHeight, actualFile);
+                    new CSVFile(previousChoice, screenHeight);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -102,10 +105,6 @@ public class HelloApplication extends Application {
         screenHeight = Screen.getPrimary().getVisualBounds().getHeight();
         changingStage.setHeight(screenHeight);
         changingStage.setWidth(Screen.getPrimary().getVisualBounds().getWidth());
-        if (previousChoice != null) {
-            actualFile = null;
-            changingStage.setTitle("CONCORDIA'S OPEN DATA -> " + previousChoice);
-        }
     }
 
     class TaskDisplayTable implements Runnable {
@@ -186,7 +185,9 @@ public class HelloApplication extends Application {
                     }
                 });
                 Button resetZoom = new Button("reset");
-                resetZoom.setOnAction(e -> {
+                if(value==12)
+                    resetZoom.setVisible(false);
+                resetZoom.setOnAction(event -> {
                     zoomInOut(0);
                 });
                 resetZoom.setPrefSize(50, 25);
@@ -258,8 +259,19 @@ public class HelloApplication extends Application {
                         Platform.runLater(() -> iJustPressedAkey = false);
                     }
                 });
-                if (importedFile != null)
+                if (!actualFileImported) {
+                    changingStage.setTitle("CONCORDIA'S OPEN DATA -> " + previousChoice);
+                } else {
                     changingStage.setTitle("IMPORTED DATA -> " + importedFile.getName());
+                    try {
+                        if(antiSpamRestarts==numberOfImports)
+                            restart();
+                    } catch (IOException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
+                    antiSpamRestarts++;
+                }
                 if (finished) {
                     changingStage.setScene(scene);
                     changingStage.show();
@@ -271,30 +283,41 @@ public class HelloApplication extends Application {
                     }
                 });
                 buttonImport.setOnAction(e -> {
+                    antiSpamRestarts=0;
+                    numberOfImports++;
+                    actualFileImported = true;
                     importedFile = new FileChooser().showOpenDialog(changingStage);
-                    Platform.runLater(() -> previousChoice = importedFile.getName());
+                    previousChoice = importedFile.getName();
                     CSVFile.upload(importedFile, importedFile.getName());
                     cb.getItems().add(importedFile.getName());
-                    try {
-                        restart();
-                    } catch (IOException a) {
-                        a.printStackTrace();
-                    }
-
+                    cb.setValue(previousChoice);
+                    choiceBoxUpdate();
                 });
                 cb.setOnAction((event) -> {
-                    previousChoice = cb.getSelectionModel().getSelectedItem();
-                    try {
-                        restart();
-                        changingStage.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    choiceBoxUpdate();
                 });
 
             });
 
         }
+    }
+
+    public void choiceBoxUpdate() {
+        previousChoice = cb.getSelectionModel().getSelectedItem();
+        try {
+            Thread.sleep(100);
+            restart();
+
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        changingStage.close();
+
     }
 
     class TaskAnimation implements Runnable {
@@ -350,12 +373,17 @@ public class HelloApplication extends Application {
 
     private void zoomInOut(int i) {
         value = 1.2 * i + value;
+        if (i == 0)
+            value = 12;
         CSVFile.changeTextSize(value);
-        try {
-            restart();
-        } catch (IOException e1) {
-            e1.printStackTrace();
-        }
+        Platform.runLater(() -> {
+            try {
+                restart();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        });
     }
 
 }
