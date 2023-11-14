@@ -33,7 +33,7 @@ import javafx.stage.Stage;
 
 public class HelloApplication extends Application {
     private static String previousChoice = "CATALOG_2023_09_19.csv";
-    public static final double RATIO_CONTENT_TO_WINDOW = Screen.getPrimary().getVisualBounds().getHeight() / 1150;
+    public static final double RATIO_CONTENT_TO_WINDOW = 0.72;
     private static Hyperlink hyperlink = new Hyperlink("www.github.com/leonlolleonlol");
     private static boolean actualFileImported = false,finished, iJustPressedAkey = false;
     private static double screenHeight, value = CSVFile.getFontSize();
@@ -107,6 +107,7 @@ public class HelloApplication extends Application {
         changingStage.setWidth(Screen.getPrimary().getVisualBounds().getWidth());
     }
 
+
     class TaskDisplayTable implements Runnable {
         private final Group root;
 
@@ -153,8 +154,6 @@ public class HelloApplication extends Application {
                 hBoxLineNumber.setSpacing(5);
                 Spinner<Integer> spinner = new Spinner<>(
                         new InvertedSpinnerValueFactory(0, CSVFile.getDataList().size(), 0, 1));
-                // Configure the spinner to wrap around when reaching the minimum or maximum
-                // value
                 spinner.valueProperty().addListener((observable, oldValue, newValue) -> {
                     CSVFile.takemeToThisLine(newValue);
                 });
@@ -267,7 +266,6 @@ public class HelloApplication extends Application {
                         if(antiSpamRestarts==numberOfImports)
                             restart();
                     } catch (IOException e1) {
-                        // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
                     antiSpamRestarts++;
@@ -308,14 +306,9 @@ public class HelloApplication extends Application {
             Thread.sleep(100);
             restart();
 
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
+        } catch (InterruptedException|IOException e) {
             e.printStackTrace();
         }
-
         changingStage.close();
 
     }
@@ -380,7 +373,6 @@ public class HelloApplication extends Application {
             try {
                 restart();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         });
