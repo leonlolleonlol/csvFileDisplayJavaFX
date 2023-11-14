@@ -27,9 +27,10 @@ public class CSVFile {
     private static ArrayList<String> header;
     private static TableColumn<Record, String>[] columns;
     private static double cellSize = 25, fontSize = 12;
-    private static String lastChoice, fontSizeString = "-fx-font-size: " + fontSize + ";";
+    private static String lastChoice, fontSizeString = "-fx-font-size: " + fontSize + ";",fieldDelimiter=",",overrideDelimiter;
 
-    public CSVFile(String file, double screenSize) throws IOException {
+    public CSVFile(String file, double screenSize,String forcedDelimiter) throws IOException {
+        overrideDelimiter=forcedDelimiter;
         lastChoice = file;
         dataList = FXCollections.observableArrayList();
         tableView = new TableView<>();
@@ -100,12 +101,29 @@ public class CSVFile {
         }
         return b;
     }
+    public static String findDelimiterChar() throws IOException
+    {
+        var delimiter = new BufferedReader(new FileReader(lastChoice, UTF_8));
+        if (lastChoice != null && lastChoice.equals("DATA_OUTPUT.csv"))
+                for (int i = 0; i < 17; i++)
+                    delimiter.readLine();
+        int commas=0;
+        for(char c:delimiter.readLine().toCharArray())
+        {
+            if(c==',')
+                commas++;
+            else if (c==';')
+                commas--;
+        }
+        delimiter.close();
+        return commas>0?",":";";
+    }
 
     public void readCSV() throws IOException {
-        String fieldDelimiter = ",";
+        fieldDelimiter=findDelimiterChar();
+        if(overrideDelimiter!=null)
+            fieldDelimiter=overrideDelimiter.substring(0,1);
         BufferedReader br = checkFile();
-        if (lastChoice == null)
-            fieldDelimiter = ";";
         var columnIndexRemoved = new ArrayList<Integer>();
         header = new ArrayList<String>(Arrays.asList(br.readLine().split(fieldDelimiter, -1)));
         for (int i = 0; i < header.size(); i++)
@@ -130,7 +148,7 @@ public class CSVFile {
             if (count == 1) {
                 line += br.readLine();
             }
-            pattern = Pattern.compile(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+            pattern = Pattern.compile(fieldDelimiter+"(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
             String[] firstFields = pattern.split(line);
             if (firstFields != null) {
                 String[] fields = new String[numberOfColumns];
@@ -245,6 +263,15 @@ public class CSVFile {
 
     public static int getNumberOfColumns() {
         return numberOfColumns;
+    }
+
+    public static String getFieldDelimiter() {
+        return fieldDelimiter;
+    }
+
+    public static void setFieldDelimiter(String fieldDelimiter) {
+        if(!fieldDelimiter.isBlank())
+            CSVFile.fieldDelimiter = fieldDelimiter.substring(0,1);
     }
 
     public static double getFontSize() {
