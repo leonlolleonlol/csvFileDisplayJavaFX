@@ -23,7 +23,7 @@ public class CSVFile {
     private static int[] maxes;
     private static TableView<Record> tableView;
     private static ObservableList<Record> dataList;
-    private static int numberOfColumns, desiredWidth;
+    private static int numberOfColumns, desiredWidth,initialRows=1,rowsLoaded=1;
     private static ArrayList<String> header;
     private static TableColumn<Record, String>[] columns;
     private static double cellSize = 25, fontSize = 12;
@@ -115,6 +115,8 @@ public class CSVFile {
             else if (c==';')
                 commas--;
         }
+        while (delimiter.readLine() != null)
+            initialRows++;
         delimiter.close();
         return commas>0?",":";";
     }
@@ -184,6 +186,7 @@ public class CSVFile {
                 realFields = updateMaxes(fields, realFields);
                 Record record = new Record(transformArrayListToArray(names), transformArrayListToArray(realFields));
                 dataList.add(record);
+                rowsLoaded++;
             }
         }
     }
@@ -191,18 +194,17 @@ public class CSVFile {
     private static void openExplorer(Path destination) throws IOException {
         String os = System.getProperty("os.name").toLowerCase();
         Runtime rt = Runtime.getRuntime();
-        if (os.contains("win")) {
+        if (os.contains("win"))
             // For Windows
             rt.exec("explorer.exe /select," + destination);
-        } else if (os.contains("mac")) {
+        else if (os.contains("mac"))
             // For Mac
             rt.exec("open " + destination);
-        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+        else if (os.contains("nix") || os.contains("nux") || os.contains("aix"))
             // For Linux
             rt.exec("xdg-open " + destination);
-        } else {
+        else
             throw new UnsupportedOperationException("Operating system not supported");
-        }
     }
 
     public static void download(File selectedFile, String previousChoice) {
@@ -234,9 +236,8 @@ public class CSVFile {
     }
 
     public ArrayList<String> updateMaxes(String[] fields, ArrayList<String> realFields) {
-        for (int i = 0; i < numberOfColumns; i++) {
+        for (int i = 0; i < numberOfColumns; i++)
             maxes[i] = Math.max(realFields.get(i).length(), maxes[i]);
-        }
         return realFields;
     }
 
@@ -297,10 +298,17 @@ public class CSVFile {
     public static int getDesiredWidth() {
         return desiredWidth;
     }
+    
+
+    public static int getInitialRows() {
+        return initialRows;
+    }
+
+    public static int getRowsLoaded() {
+        return rowsLoaded;
+    }
 
     public static void setFontSize(double fontSize) {
         CSVFile.fontSize = fontSize;
     }
-    
-
 }

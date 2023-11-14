@@ -24,4 +24,13 @@ public class Record {
         }
     }
 
+    // Add this method to check if any field contains the search term
+    public boolean containsSearchTerm(String searchTerm) {
+        for (SimpleStringProperty field : fields.values()) {
+            if (field.get().toLowerCase().contains(searchTerm.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

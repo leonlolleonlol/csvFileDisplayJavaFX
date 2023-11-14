@@ -7,6 +7,7 @@ import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
@@ -37,7 +38,7 @@ public class HelloApplication extends Application {
     public static final double RATIO_CONTENT_TO_WINDOW = 0.72;
     private static Hyperlink hyperlink = new Hyperlink("www.github.com/leonlolleonlol");
     private static boolean actualFileImported = false, finished, iJustPressedAkey = false, lineChange;
-    private static double screenHeight, value = CSVFile.getFontSize();
+    private static double screenHeight, value = CSVFile.getFontSize(), loadingTime;
     private Stage changingStage;
     private static ChoiceBox<String> cb = new ChoiceBox<>();
     private static File importedFile;
@@ -63,6 +64,7 @@ public class HelloApplication extends Application {
 
     public void restart() {
         try {
+            long startTime = System.nanoTime();
             preLoadTable();
             finished = false;
             TaskLoadCVSFile taskLoadCVSFile = new TaskLoadCVSFile();
@@ -80,7 +82,7 @@ public class HelloApplication extends Application {
             }
             finished = true;
             Platform.runLater(() -> {
-                TaskDisplayTable taskDisplayTable = new TaskDisplayTable(new Group());
+                TaskDisplayTable taskDisplayTable = new TaskDisplayTable(new Group(), startTime);
                 Thread thread1 = new Thread(taskDisplayTable);
                 cb.setStyle(
                         "-fx-font-family: Arial; -fx-font-size: "
@@ -115,9 +117,11 @@ public class HelloApplication extends Application {
 
     class TaskDisplayTable implements Runnable {
         private final Group root;
+        private final long startTime;
 
-        public TaskDisplayTable(Group root) {
+        public TaskDisplayTable(Group root, long startTime) {
             this.root = root;
+            this.startTime = startTime;
         }
 
         @Override
@@ -151,16 +155,12 @@ public class HelloApplication extends Application {
                 vBox.setMinWidth(CSVFile.getTableView().getMinWidth());
                 vBox.setAlignment(Pos.TOP_LEFT);
 
-                Label choice = new Label(
-                        "Current File: (" + String.valueOf(CSVFile.getDataList().size()) + " rows & "
-                                + CSVFile.getNumberOfColumns() + " columns)");
-                choice.setFont(Font.font(16));
-
                 Button buttonImport = new Button("Import your .csv file");
 
                 Spinner<Integer> spinner = new Spinner<>(
                         new InvertedSpinnerValueFactory(0, CSVFile.getDataList().size(), 0, 1));
-                spinner.valueProperty().addListener((observable, oldValue, newValue) -> CSVFile.takemeToThisLine(newValue));
+                spinner.valueProperty()
+                        .addListener((observable, oldValue, newValue) -> CSVFile.takemeToThisLine(newValue));
                 spinner.setEditable(true);
                 spinner.setPrefWidth(140);
 
@@ -217,11 +217,31 @@ public class HelloApplication extends Application {
                 delimiterCharTextField.setEditable(true);
                 delimiterHBox.getChildren().addAll(downloadButton, new Text("Separated by "), delimiterCharTextField);
 
+                loadingTime = Double.parseDouble(String.format("%.2f", (System.nanoTime() - startTime) / 1e9));
+                Label choice = new Label(
+                        "Current File: (" + String.valueOf(CSVFile.getDataList().size()) + " rows & "
+                                + CSVFile.getNumberOfColumns() + " columns) loaded in " + loadingTime + " s");
+                choice.setFont(Font.font(16));
+
+                var creditsHbox = new HBox();
+                creditsHbox.setSpacing(5);
+                creditsHbox.getChildren().addAll(new Text("Made by:"), hyperlink);
+
+                TextField searchField = new TextField();
+                searchField.setPromptText("Search...");
+
+                // Add a button to trigger the search
+                Button searchButton = new Button("Search");
+                searchButton.setOnAction(e -> performSearch(searchField.getText()));
+
+                var searchHBox = new HBox();
+                searchHBox.setSpacing(5);
+                searchHBox.getChildren().addAll(searchField, searchButton);
+
                 var smallPortionVBox = new VBox();
                 smallPortionVBox.setStyle("-fx-background-color: #f0f0f0;");
-                smallPortionVBox.getChildren().addAll(choice, miniHBox, hBoxLineNumber, delimiterHBox,
-                        new Text("Made by:"),
-                        hyperlink);
+                smallPortionVBox.getChildren().addAll(choice, miniHBox, hBoxLineNumber, delimiterHBox, creditsHbox,
+                        searchHBox);
                 smallPortionVBox.setAlignment(Pos.TOP_LEFT);
                 smallPortionVBox.setTranslateY(-25);
                 smallPortionVBox.setSpacing(5);
@@ -331,30 +351,38 @@ public class HelloApplication extends Application {
         restart();
     }
 
+    private void performSearch(String searchTerm) {
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            // Create a filtered list based on the search term
+            FilteredList<Record> filteredList = CSVFile.getDataList()
+                    .filtered(record -> record.containsSearchTerm(searchTerm));
+            // Update the TableView with the filtered list
+            CSVFile.getTableView().setItems(filteredList);
+        } else {
+            // If search term is empty, show all rows
+            CSVFile.getTableView().setItems(CSVFile.getDataList());
+        }
+    }
+
     class TaskAnimation implements Runnable {
-        long startTime;
         ProgressIndicator pb = new ProgressIndicator();
 
         @Override
         public void run() {
             if (!finished) {
                 double[] progress = { 0.0 };
-                startTime = System.nanoTime();
                 AnimationTimer timer = new AnimationTimer() {
                     @Override
                     public void handle(long now) {
-                        long elapsedTime = now - startTime;
-                        progress[0] = elapsedTime / 2e9; // Change this value to adjust the animation speed
-                        if (progress[0] > 1.033 && !finished) {
-                            progress[0] = 1.0;
-                            stop();
-                            try {
+                        if (CSVFile.getHeader() != null) {
+                            progress[0] = CSVFile.getRowsLoaded() / CSVFile.getInitialRows();
+                            if (progress[0] > 1.0 && !finished) {
+                                progress[0] = 1.0;
+                                stop();
                                 Platform.runLater(() -> restart());
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        } else
-                            Platform.runLater(() -> pb.setProgress(progress[0]));
+                            } else
+                                Platform.runLater(() -> pb.setProgress(progress[0]));
+                        }
                     }
                 };
                 timer.start();
