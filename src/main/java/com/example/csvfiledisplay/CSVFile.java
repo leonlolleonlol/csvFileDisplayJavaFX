@@ -92,7 +92,7 @@ public class CSVFile {
     public static BufferedReader checkFile() {
         BufferedReader b = null;
         try {
-                b = new BufferedReader(new FileReader(lastChoice, UTF_8));
+                b = new BufferedReader(new FileReader(lastChoice, lastChoice.substring(0,2)=="CU"?UTF_16LE:UTF_8));
             if (lastChoice != null && lastChoice.equals("DATA_OUTPUT.csv"))
                 for (int i = 0; i < 17; i++)
                     b.readLine();
@@ -103,7 +103,7 @@ public class CSVFile {
     }
     public static String findDelimiterChar() throws IOException
     {
-        var delimiter = new BufferedReader(new FileReader(lastChoice, UTF_8));
+        var delimiter = new BufferedReader(new FileReader(lastChoice, lastChoice.substring(0,2)=="CU"?UTF_16LE:UTF_8));
         if (lastChoice != null && lastChoice.equals("DATA_OUTPUT.csv"))
                 for (int i = 0; i < 17; i++)
                     delimiter.readLine();
@@ -127,7 +127,7 @@ public class CSVFile {
             fieldDelimiter=overrideDelimiter.substring(0,1);
         BufferedReader br = checkFile();
         var columnIndexRemoved = new ArrayList<Integer>();
-        header = new ArrayList<String>(Arrays.asList(br.readLine().split(fieldDelimiter, -1)));
+        header = new ArrayList<String>(Arrays.asList(br.readLine().replaceAll("\"", "").split(fieldDelimiter, -1)));
         for (int i = 0; i < header.size(); i++)
             if (i != header.size() - 1 && header.get(i).isEmpty()) {
                 columnIndexRemoved.add(i);
@@ -141,7 +141,7 @@ public class CSVFile {
         br = checkFile();
         br.readLine();
         String line = null;
-        while ((line = br.readLine()) != null) {
+        while ((line = br.readLine().replaceAll("\"", "")) != null) {
             Pattern pattern = Pattern.compile("\"");
             Matcher matcher = pattern.matcher(line);
             int count = 0;
