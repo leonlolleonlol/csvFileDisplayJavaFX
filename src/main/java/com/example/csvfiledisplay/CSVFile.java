@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,6 +29,7 @@ public class CSVFile {
     private static TableColumn<Record, String>[] columns;
     private static double cellSize = 25, fontSize = 12;
     private static String lastChoice, fontSizeString = "-fx-font-size: " + fontSize + ";",fieldDelimiter=",",overrideDelimiter;
+    private static Charset charset=UTF_8;
 
     public CSVFile(String file, double screenSize,String forcedDelimiter) throws IOException {
         overrideDelimiter=forcedDelimiter;
@@ -92,7 +94,7 @@ public class CSVFile {
     public static BufferedReader checkFile() {
         BufferedReader b = null;
         try {
-                b = new BufferedReader(new FileReader(lastChoice, UTF_8));
+                b = new BufferedReader(new FileReader(lastChoice, charset));
             if (lastChoice != null && lastChoice.equals("DATA_OUTPUT.csv"))
                 for (int i = 0; i < 17; i++)
                     b.readLine();
@@ -103,7 +105,7 @@ public class CSVFile {
     }
     public static String findDelimiterChar() throws IOException
     {
-        var delimiter = new BufferedReader(new FileReader(lastChoice, UTF_8));
+        var delimiter = new BufferedReader(new FileReader(lastChoice,charset));
         if (lastChoice != null && lastChoice.equals("DATA_OUTPUT.csv"))
                 for (int i = 0; i < 17; i++)
                     delimiter.readLine();
@@ -122,12 +124,13 @@ public class CSVFile {
     }
 
     public void readCSV() throws IOException {
+        charset=lastChoice.substring(0,2)=="CU"?UTF_16LE:UTF_8;
         fieldDelimiter=findDelimiterChar();
         if(overrideDelimiter!=null)
             fieldDelimiter=overrideDelimiter.substring(0,1);
         BufferedReader br = checkFile();
         var columnIndexRemoved = new ArrayList<Integer>();
-        header = new ArrayList<String>(Arrays.asList(br.readLine().split(fieldDelimiter, -1)));
+        header = new ArrayList<String>(Arrays.asList(br.readLine().replaceAll("\"", "").split(fieldDelimiter, -1)));
         for (int i = 0; i < header.size(); i++)
             if (i != header.size() - 1 && header.get(i).isEmpty()) {
                 columnIndexRemoved.add(i);
@@ -155,7 +158,7 @@ public class CSVFile {
             if (firstFields != null) {
                 String[] fields = new String[numberOfColumns];
                 for (int i = 0; i < firstFields.length; i++)
-                    if (firstFields[i] != null && firstFields[i].length() > 2 && firstFields[i].charAt(0) == '\"'
+                    while (firstFields[i] != null && firstFields[i].length() > 2 && firstFields[i].charAt(0) == '\"'
                             && firstFields[i].charAt(firstFields[i].length() - 1) == '\"')
                         firstFields[i] = firstFields[i].substring(1, firstFields[i].length() - 1);
                 if (firstFields.length < numberOfColumns) {

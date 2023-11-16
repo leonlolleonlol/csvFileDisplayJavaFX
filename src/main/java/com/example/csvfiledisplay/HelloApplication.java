@@ -2,6 +2,7 @@ package com.example.csvfiledisplay;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Random;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
@@ -48,10 +49,31 @@ public class HelloApplication extends Application {
     public void start(Stage primaryStage) throws IOException {
         changingStage = primaryStage;
         changingStage.setMaximized(true);
-        cb.getItems().addAll("DATAOUTPUT_MODIFIED.csv", "WASTE_BIN_TYPE.csv", "WASTE_INVOICES.csv",
-                "CATALOG_2022_08_16.csv", "CATALOG_2023_09_19.csv", "CATALOG.csv",
-                "CU_SR_OPEN_DATA_TERM_SESS.csv",
-                "DATA_OUTPUT.csv", "FacList.csv", "POINT_LIST.csv", "BUILDING_LIST.csv", "WASTE_TYPE.csv");
+        cb.getItems().addAll(
+        "BUILDING_LIST.csv",
+        "CATALOG_2022_08_16.csv",
+        "CATALOG_2022_08_18.csv",
+        "CATALOG_2022_12_21.csv",
+        "CATALOG_2023_03_30.csv",
+        "CATALOG_2023_09_18.csv",
+        "CATALOG_2023_09_19.csv",
+        "CATALOG.csv",
+        "CU_SR_OPEN_DATA_CATALOG_DESC.csv",
+        "CU_SR_OPEN_DATA_CATALOG.csv",
+        "CU_SR_OPEN_DATA_COMB_SECTIONS.csv",
+        "CU_SR_OPEN_DATA_DEPT_FAC_STRUC.csv",
+        "CU_SR_OPEN_DATA_SCHED.csv",
+        "CU_SR_OPEN_DATA_TERM_SESS.csv",
+        "DATA_OUTPUT.csv",
+        "DATAOUTPUT_MODIFIED.csv",
+        "POINT_LIST.csv",
+        "WASTE_BIN_TYPE.csv",
+        "WASTE_INVOICES.csv",
+        "WASTE_TYPE.csv");
+        int random=new Random().nextInt(cb.getItems().size()-1);
+        if(random==12)
+            random++;
+        previousChoice=cb.getItems().get(random);
         changingStage.getIcons().add(new Image("file:download.png"));
 
         cb.setValue(previousChoice);
@@ -85,9 +107,7 @@ public class HelloApplication extends Application {
                 TaskDisplayTable taskDisplayTable = new TaskDisplayTable(new Group(), startTime);
                 Thread thread1 = new Thread(taskDisplayTable);
                 cb.setStyle(
-                        "-fx-font-family: Arial; -fx-font-size: "
-                                + (25 * Math.pow(Math.E, -0.1 * cb.getItems().size()) + 4)
-                                + "px;");
+                        "-fx-font-family: Arial; -fx-font-size: 12px;");
                 thread1.start();
             });
         } catch (Exception e) {
