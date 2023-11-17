@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
@@ -19,14 +18,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -36,11 +33,11 @@ import javafx.stage.Stage;
 
 public class HelloApplication extends Application {
     private static String previousChoice = "CATALOG_2023_09_19.csv", forcedDelimiter = null;
-    public static final double RATIO_CONTENT_TO_WINDOW = 0.72;
+    public static final double RATIO_CONTENT_TO_WINDOW = 0.65;
     private static Hyperlink hyperlink = new Hyperlink("www.github.com/leonlolleonlol");
     private static boolean actualFileImported = false, finished, iJustPressedAkey = false, lineChange;
     private static double screenHeight, value = CSVFile.getFontSize(), loadingTime;
-    private Stage changingStage;
+    private static Stage changingStage;
     private static ChoiceBox<String> cb = new ChoiceBox<>();
     private static File importedFile;
     private static int antiSpamRestarts = 0, numberOfImports = 0;
@@ -89,7 +86,7 @@ public class HelloApplication extends Application {
             long startTime = System.nanoTime();
             preLoadTable();
             finished = false;
-            TaskLoadCVSFile taskLoadCVSFile = new TaskLoadCVSFile();
+            TaskLoadCSVFile taskLoadCVSFile = new TaskLoadCSVFile();
             Thread thread3 = new Thread(taskLoadCVSFile);
             thread3.setPriority(1);
             TaskAnimation taskAnimation = new TaskAnimation();
@@ -112,20 +109,6 @@ public class HelloApplication extends Application {
             });
         } catch (Exception e) {
             e.getMessage();
-        }
-    }
-
-    class TaskLoadCVSFile implements Runnable {
-
-        @Override
-        public void run() {
-            Platform.runLater(() -> {
-                try {
-                    new CSVFile(previousChoice, screenHeight, forcedDelimiter);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
         }
     }
 
@@ -186,7 +169,7 @@ public class HelloApplication extends Application {
 
                 var hBoxLineNumber = new HBox();
                 hBoxLineNumber.setSpacing(5);
-                hBoxLineNumber.getChildren().addAll(buttonImport, new Text("Starting from line "), spinner);
+                hBoxLineNumber.getChildren().addAll(buttonImport, new Text(" Starting from line "), spinner);
 
                 VBox secondVbox = new VBox();
                 secondVbox.setLayoutY(0);
@@ -235,12 +218,13 @@ public class HelloApplication extends Application {
                 delimiterCharTextField.setMaxSize(30, 30);
                 delimiterCharTextField.setText(CSVFile.getFieldDelimiter());
                 delimiterCharTextField.setEditable(true);
-                delimiterHBox.getChildren().addAll(downloadButton, new Text("Separated by "), delimiterCharTextField);
+
+                delimiterHBox.getChildren().addAll(downloadButton,new Text("Separated by "), delimiterCharTextField);
 
                 loadingTime = Double.parseDouble(String.format("%.2f", (System.nanoTime() - startTime) / 1e9));
                 Label choice = new Label(
                         "Current File: (" + String.valueOf(CSVFile.getDataList().size()) + " rows & "
-                                + CSVFile.getNumberOfColumns() + " columns) loaded in " + loadingTime + " s");
+                                + CSVFile.getNumberOfColumns() + " columns) "+new File(previousChoice).length()/1024+" Kb loaded in " + loadingTime + " s");
                 choice.setFont(Font.font(16));
 
                 var creditsHbox = new HBox();
@@ -384,49 +368,35 @@ public class HelloApplication extends Application {
         }
     }
 
-    class TaskAnimation implements Runnable {
-        ProgressIndicator pb = new ProgressIndicator();
-
-        @Override
-        public void run() {
-            if (!finished) {
-                double[] progress = { 0.0 };
-                AnimationTimer timer = new AnimationTimer() {
-                    @Override
-                    public void handle(long now) {
-                        if (CSVFile.getHeader() != null) {
-                            progress[0] = CSVFile.getRowsLoaded() / CSVFile.getInitialRows();
-                            if (progress[0] > 1.0 && !finished) {
-                                progress[0] = 1.0;
-                                stop();
-                                Platform.runLater(() -> restart());
-                            } else
-                                Platform.runLater(() -> pb.setProgress(progress[0]));
-                        }
-                    }
-                };
-                timer.start();
-                if (!finished) {
-                    Platform.runLater(() -> {
-                        var vBox = new StackPane();
-                        vBox.getChildren().add(pb);
-                        vBox.setPrefSize(200, 200);
-                        vBox.setTranslateX(0);
-                        vBox.setTranslateY(0);
-                        changingStage.setScene(new Scene(vBox));
-                        changingStage.show();
-                    });
-                }
-            } else
-                Thread.currentThread().interrupt();
-        }
-    }
-
     private void zoomInOut(int i) {
         value = 1.2 * i + value;
         if (i == 0)
             value = 12;
         CSVFile.changeTextSize(value);
         Platform.runLater(() -> restart());
+    }
+
+    public static String getPreviousChoice() {
+        return previousChoice;
+    }
+
+    public static String getForcedDelimiter() {
+        return forcedDelimiter;
+    }
+
+    public static double getScreenHeight() {
+        return screenHeight;
+    }
+
+    public static boolean isFinished() {
+        return finished;
+    }
+
+    public static double getLoadingTime() {
+        return loadingTime;
+    }
+
+    public static Stage getChangingStage() {
+        return changingStage;
     }
 }
