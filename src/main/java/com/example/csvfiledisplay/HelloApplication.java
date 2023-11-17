@@ -41,6 +41,7 @@ public class HelloApplication extends Application {
     private static ChoiceBox<String> cb = new ChoiceBox<>();
     private static File importedFile;
     private static int antiSpamRestarts = 0, numberOfImports = 0;
+    private static long startTime;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
@@ -83,7 +84,7 @@ public class HelloApplication extends Application {
 
     public void restart() {
         try {
-            long startTime = System.nanoTime();
+            startTime = System.nanoTime();
             preLoadTable();
             finished = false;
             TaskLoadCSVFile taskLoadCVSFile = new TaskLoadCSVFile();
@@ -101,7 +102,7 @@ public class HelloApplication extends Application {
             }
             finished = true;
             Platform.runLater(() -> {
-                TaskDisplayTable taskDisplayTable = new TaskDisplayTable(new Group(), startTime);
+                TaskDisplayTable taskDisplayTable = new TaskDisplayTable(new Group());
                 Thread thread1 = new Thread(taskDisplayTable);
                 cb.setStyle(
                         "-fx-font-family: Arial; -fx-font-size: 12px;");
@@ -120,11 +121,9 @@ public class HelloApplication extends Application {
 
     class TaskDisplayTable implements Runnable {
         private final Group root;
-        private final long startTime;
 
-        public TaskDisplayTable(Group root, long startTime) {
+        public TaskDisplayTable(Group root) {
             this.root = root;
-            this.startTime = startTime;
         }
 
         @Override
