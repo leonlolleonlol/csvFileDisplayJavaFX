@@ -83,7 +83,7 @@ public class CSVFile {
         setCellSize(newSize * 25 / 12);
     }
 
-    public static void changeWidth(double newWidth, double screenWidth) {
+    public static void changeWidth(double newWidth) {
         tableView.setMaxWidth(newWidth);
     }
 
@@ -92,8 +92,8 @@ public class CSVFile {
         for (int i : maxes)
             desiredWidth += i;
         tableView.getColumns().stream().forEach((column) -> column
-                .setPrefWidth(fontSize * 0.6 * finalRate * (maxes[Integer.parseInt(column.getId()) - 1])));
-        desiredWidth *= fontSize * 0.6;
+                .setPrefWidth(fontSize * finalRate *0.6* (maxes[Integer.parseInt(column.getId()) - 1])));
+        desiredWidth *= fontSize*0.6;
     }
 
     public static BufferedReader checkFile() {

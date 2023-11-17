@@ -2,7 +2,6 @@ package com.example.csvfiledisplay;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Random;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -35,45 +34,42 @@ public class HelloApplication extends Application {
     private static String previousChoice = "CATALOG_2023_09_19.csv", forcedDelimiter = null;
     public static final double RATIO_CONTENT_TO_WINDOW = 0.65;
     private static Hyperlink hyperlink = new Hyperlink("www.github.com/leonlolleonlol");
-    private static boolean actualFileImported = false, finished, iJustPressedAkey = false, lineChange;
+    private static boolean actualFileImported = false, iJustPressedAkey = false, lineChange;
     private static double screenHeight, value = CSVFile.getFontSize(), loadingTime;
-    private static Stage changingStage;
     private static ChoiceBox<String> cb = new ChoiceBox<>();
     private static File importedFile;
     private static int antiSpamRestarts = 0, numberOfImports = 0;
     private static long startTime;
+    private static Stage primarStage;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        changingStage = primaryStage;
-        changingStage.setMaximized(true);
+        primarStage=primaryStage;
+        primaryStage.setMaximized(true);
+        cb.setStyle("-fx-font-family: Arial; -fx-font-size: 12px;");
         cb.getItems().addAll(
-        "BUILDING_LIST.csv",
-        "CATALOG_2022_08_16.csv",
-        "CATALOG_2022_08_18.csv",
-        "CATALOG_2022_12_21.csv",
-        "CATALOG_2023_03_30.csv",
-        "CATALOG_2023_09_18.csv",
-        "CATALOG_2023_09_19.csv",
-        "CATALOG.csv",
-        "CU_SR_OPEN_DATA_CATALOG_DESC.csv",
-        "CU_SR_OPEN_DATA_CATALOG.csv",
-        "CU_SR_OPEN_DATA_COMB_SECTIONS.csv",
-        "CU_SR_OPEN_DATA_DEPT_FAC_STRUC.csv",
-        "CU_SR_OPEN_DATA_SCHED.csv",
-        "CU_SR_OPEN_DATA_TERM_SESS.csv",
-        "DATA_OUTPUT.csv",
-        "DATAOUTPUT_MODIFIED.csv",
-        "POINT_LIST.csv",
-        "WASTE_BIN_TYPE.csv",
-        "WASTE_INVOICES.csv",
-        "WASTE_TYPE.csv");
-        int random=new Random().nextInt(cb.getItems().size()-1);
-        if(random==12)
-            random++;
-        previousChoice=cb.getItems().get(random);
-        changingStage.getIcons().add(new Image("file:download.png"));
-
+                "BUILDING_LIST.csv",
+                "CATALOG_2022_08_16.csv",
+                "CATALOG_2022_08_18.csv",
+                "CATALOG_2022_12_21.csv",
+                "CATALOG_2023_03_30.csv",
+                "CATALOG_2023_09_18.csv",
+                "CATALOG_2023_09_19.csv",
+                "CATALOG.csv",
+                "CU_SR_OPEN_DATA_CATALOG_DESC.csv",
+                "CU_SR_OPEN_DATA_CATALOG.csv",
+                "CU_SR_OPEN_DATA_COMB_SECTIONS.csv",
+                "CU_SR_OPEN_DATA_DEPT_FAC_STRUC.csv",
+                "CU_SR_OPEN_DATA_SCHED.csv",
+                "CU_SR_OPEN_DATA_TERM_SESS.csv",
+                "DATA_OUTPUT.csv",
+                "DATAOUTPUT_MODIFIED.csv",
+                "POINT_LIST.csv",
+                "WASTE_BIN_TYPE.csv",
+                "WASTE_INVOICES.csv",
+                "WASTE_TYPE.csv");
+        previousChoice = cb.getItems().get(0);
+        primaryStage.getIcons().add(new Image("file:download.png"));
         cb.setValue(previousChoice);
         choiceBoxUpdate();
     }
@@ -81,42 +77,37 @@ public class HelloApplication extends Application {
     public static void main(String[] args) {
         launch(args);
     }
+    public static Stage getChangingStage() {
+        return primarStage;
+    }
 
     public void restart() {
         try {
             startTime = System.nanoTime();
-            preLoadTable();
-            finished = false;
-            TaskLoadCSVFile taskLoadCVSFile = new TaskLoadCSVFile();
-            Thread thread3 = new Thread(taskLoadCVSFile);
-            thread3.setPriority(1);
+            screenHeight = Screen.getPrimary().getVisualBounds().getHeight();
+            HelloApplication.getChangingStage().setHeight(screenHeight);
+            HelloApplication.getChangingStage().setWidth(Screen.getPrimary().getVisualBounds().getWidth());
+            TaskLoadCSVFile taskLoadCSVFile = new TaskLoadCSVFile();
+            Thread thread3 = new Thread(taskLoadCSVFile);
+            thread3.setPriority(10);
+            thread3.start();
             TaskAnimation taskAnimation = new TaskAnimation();
             Thread thread2 = new Thread(taskAnimation);
+            thread2.setPriority(1);
             thread2.start();
-            thread3.start();
-            thread2.setPriority(10);
             try {
                 thread3.join();
+                thread2.interrupt();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            finished = true;
-            Platform.runLater(() -> {
-                TaskDisplayTable taskDisplayTable = new TaskDisplayTable(new Group());
-                Thread thread1 = new Thread(taskDisplayTable);
-                cb.setStyle(
-                        "-fx-font-family: Arial; -fx-font-size: 12px;");
-                thread1.start();
-            });
+            TaskDisplayTable taskDisplayTable = new TaskDisplayTable(new Group());
+            Thread thread1 = new Thread(taskDisplayTable);
+            thread1.setPriority(10);
+            thread1.start();
         } catch (Exception e) {
             e.getMessage();
         }
-    }
-
-    public void preLoadTable() {
-        screenHeight = Screen.getPrimary().getVisualBounds().getHeight();
-        changingStage.setHeight(screenHeight);
-        changingStage.setWidth(Screen.getPrimary().getVisualBounds().getWidth());
     }
 
     class TaskDisplayTable implements Runnable {
@@ -132,19 +123,19 @@ public class HelloApplication extends Application {
                 root.getChildren().clear(); // Clear the children before adding new nodes
                 Slider heightSlider = new Slider();
                 heightSlider.setMin(CSVFile.getCellsize());
-                heightSlider.setMax(changingStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
+                heightSlider.setMax(HelloApplication.getChangingStage().getWidth() * RATIO_CONTENT_TO_WINDOW);
                 heightSlider.setValue(heightSlider.getMax());
-                heightSlider.setMinWidth(changingStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
+                heightSlider.setMinWidth(HelloApplication.getChangingStage().getWidth() * RATIO_CONTENT_TO_WINDOW);
 
                 Label width = new Label("Adjust Width");
-                width.setTranslateX(RATIO_CONTENT_TO_WINDOW * changingStage.getWidth() / 2);
+                width.setTranslateX(RATIO_CONTENT_TO_WINDOW * HelloApplication.getChangingStage().getWidth()/2);
 
                 Slider widthSlider = new Slider();
                 widthSlider.setTranslateY(-20);
                 widthSlider.setOrientation(Orientation.VERTICAL);
                 widthSlider.setRotate(180);
                 widthSlider.setMin(CSVFile.getCellsize());
-                widthSlider.setMax(changingStage.getHeight());
+                widthSlider.setMax(HelloApplication.getChangingStage().getHeight());
                 widthSlider.setValue(widthSlider.getMax());
                 widthSlider.setMinHeight(screenHeight * RATIO_CONTENT_TO_WINDOW);
 
@@ -218,12 +209,13 @@ public class HelloApplication extends Application {
                 delimiterCharTextField.setText(CSVFile.getFieldDelimiter());
                 delimiterCharTextField.setEditable(true);
 
-                delimiterHBox.getChildren().addAll(downloadButton,new Text("Separated by "), delimiterCharTextField);
+                delimiterHBox.getChildren().addAll(downloadButton, new Text("Separated by "), delimiterCharTextField);
 
                 loadingTime = Double.parseDouble(String.format("%.2f", (System.nanoTime() - startTime) / 1e9));
                 Label choice = new Label(
                         "Current File: (" + String.valueOf(CSVFile.getDataList().size()) + " rows & "
-                                + CSVFile.getNumberOfColumns() + " columns) "+new File(previousChoice).length()/1024+" Kb loaded in " + loadingTime + " s");
+                                + CSVFile.getNumberOfColumns() + " columns) " + new File(previousChoice).length() / 1024
+                                + " Kb loaded in " + loadingTime + " s");
                 choice.setFont(Font.font(16));
 
                 var creditsHbox = new HBox();
@@ -250,7 +242,7 @@ public class HelloApplication extends Application {
                 smallPortionVBox.setSpacing(5);
 
                 var smallBackgroundVBox = new VBox();
-                smallBackgroundVBox.setMinSize(changingStage.getWidth(), changingStage.getHeight());
+                smallBackgroundVBox.setMinSize(HelloApplication.getChangingStage().getWidth(), HelloApplication.getChangingStage().getHeight());
                 smallBackgroundVBox.setTranslateX(smallPortionVBox.getTranslateX());
                 smallBackgroundVBox.setStyle("-fx-background-color: #f0f0f0;");
 
@@ -270,17 +262,17 @@ public class HelloApplication extends Application {
                 heightSlider.valueProperty().addListener((
                         ObservableValue<? extends Number> ov, Number old_val,
                         Number new_val) -> {
-                    CSVFile.changeWidth(heightSlider.getValue(), heightSlider.getMax());
+                    CSVFile.changeWidth(heightSlider.getValue());
                     secondVbox.setTranslateX(
-                            heightSlider.getValue() - changingStage.getWidth() * RATIO_CONTENT_TO_WINDOW);
+                            heightSlider.getValue() - HelloApplication.getChangingStage().getWidth() * RATIO_CONTENT_TO_WINDOW);
                 });
 
                 HBox hBox = new HBox();
                 hBox.getChildren().addAll(vBox, secondVbox);
                 root.getChildren().addAll(hBox);
 
-                CSVFile.resetWidth(changingStage.getWidth() / CSVFile.getDesiredWidth());
-                Scene scene = new Scene(root, CSVFile.getDesiredWidth(), changingStage.getHeight());
+                CSVFile.resetWidth(HelloApplication.getChangingStage().getWidth() / CSVFile.getDesiredWidth());
+                Scene scene = new Scene(root, CSVFile.getDesiredWidth(), HelloApplication.getChangingStage().getHeight());
                 scene.setOnKeyPressed((event) -> {
                     if (!iJustPressedAkey) {
                         if (event.getCode() == KeyCode.ESCAPE)
@@ -310,18 +302,16 @@ public class HelloApplication extends Application {
                 });
 
                 if (!actualFileImported)
-                    changingStage.setTitle("CONCORDIA'S OPEN DATA -> " + previousChoice);
+                    HelloApplication.getChangingStage().setTitle("CONCORDIA'S OPEN DATA -> " + previousChoice);
                 else {
-                    changingStage.setTitle("IMPORTED DATA -> " + importedFile.getName());
+                    HelloApplication.getChangingStage().setTitle("IMPORTED DATA -> " + importedFile.getName());
                     if (antiSpamRestarts == numberOfImports)
                         restart();
                     antiSpamRestarts++;
                 }
 
-                if (finished) {
-                    changingStage.setScene(scene);
-                    changingStage.show();
-                }
+                HelloApplication.getChangingStage().setScene(scene);
+                HelloApplication.getChangingStage().show();
 
                 hyperlink.setOnAction(new EventHandler<ActionEvent>() {
                     @Override
@@ -334,7 +324,7 @@ public class HelloApplication extends Application {
                     antiSpamRestarts = 0;
                     numberOfImports++;
                     actualFileImported = true;
-                    importedFile = new FileChooser().showOpenDialog(changingStage);
+                    importedFile = new FileChooser().showOpenDialog(HelloApplication.getChangingStage());
                     previousChoice = importedFile.getName();
                     CSVFile.upload(importedFile, importedFile.getName());
                     cb.getItems().add(importedFile.getName());
@@ -342,7 +332,10 @@ public class HelloApplication extends Application {
                     choiceBoxUpdate();
                 });
 
-                cb.setOnAction((event) -> choiceBoxUpdate());
+                cb.setOnAction((event) -> {
+                    choiceBoxUpdate();
+                    Thread.currentThread().interrupt();
+                });
 
                 spinner.setOnKeyPressed((event) -> lineChange = true);
             });
@@ -361,10 +354,8 @@ public class HelloApplication extends Application {
                     .filtered(record -> record.containsSearchTerm(searchTerm));
             // Update the TableView with the filtered list
             CSVFile.getTableView().setItems(filteredList);
-        } else {
-            // If search term is empty, show all rows
+        } else
             CSVFile.getTableView().setItems(CSVFile.getDataList());
-        }
     }
 
     private void zoomInOut(int i) {
@@ -387,15 +378,7 @@ public class HelloApplication extends Application {
         return screenHeight;
     }
 
-    public static boolean isFinished() {
-        return finished;
-    }
-
     public static double getLoadingTime() {
         return loadingTime;
-    }
-
-    public static Stage getChangingStage() {
-        return changingStage;
     }
 }
