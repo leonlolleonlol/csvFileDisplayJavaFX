@@ -44,7 +44,8 @@ public class HelloApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        primarStage=primaryStage;
+        hyperlink.setFont(Font.font(14));
+        primarStage = primaryStage;
         primaryStage.setMaximized(true);
         cb.setStyle("-fx-font-family: Arial; -fx-font-size: 12px;");
         cb.getItems().addAll(
@@ -77,6 +78,7 @@ public class HelloApplication extends Application {
     public static void main(String[] args) {
         launch(args);
     }
+
     public static Stage getChangingStage() {
         return primarStage;
     }
@@ -128,7 +130,7 @@ public class HelloApplication extends Application {
                 heightSlider.setMinWidth(HelloApplication.getChangingStage().getWidth() * RATIO_CONTENT_TO_WINDOW);
 
                 Label width = new Label("Adjust Width");
-                width.setTranslateX(RATIO_CONTENT_TO_WINDOW * HelloApplication.getChangingStage().getWidth()/2);
+                width.setTranslateX(RATIO_CONTENT_TO_WINDOW * HelloApplication.getChangingStage().getWidth() / 2);
 
                 Slider widthSlider = new Slider();
                 widthSlider.setTranslateY(-20);
@@ -155,11 +157,16 @@ public class HelloApplication extends Application {
                 spinner.valueProperty()
                         .addListener((observable, oldValue, newValue) -> CSVFile.takemeToThisLine(newValue));
                 spinner.setEditable(true);
-                spinner.setPrefWidth(140);
+                spinner.setPrefWidth(100);
+
+                var delimiterCharTextField = new TextField();
+                delimiterCharTextField.setMaxSize(30, 30);
+                delimiterCharTextField.setText(CSVFile.getFieldDelimiter());
+                delimiterCharTextField.setEditable(true);
 
                 var hBoxLineNumber = new HBox();
                 hBoxLineNumber.setSpacing(5);
-                hBoxLineNumber.getChildren().addAll(buttonImport, new Text(" Starting from line "), spinner);
+                hBoxLineNumber.getChildren().addAll( new Text(" Starting from line "), spinner,new Text("Separated by "), delimiterCharTextField);
 
                 VBox secondVbox = new VBox();
                 secondVbox.setLayoutY(0);
@@ -195,8 +202,7 @@ public class HelloApplication extends Application {
                 HBox miniHBox = new HBox();
                 miniHBox.setSpacing(5);
                 miniHBox.setAlignment(Pos.TOP_LEFT);
-                miniHBox.getChildren().addAll(cb,
-                        new Text(" Zoom : " + Math.round(value * 100 / 12) + " %"), minusButton, plusButton, resetZoom);
+                miniHBox.getChildren().addAll(cb,buttonImport);
 
                 var bigPortionVBox = new VBox();
                 bigPortionVBox.getChildren().addAll(height, widthSlider);
@@ -204,12 +210,8 @@ public class HelloApplication extends Application {
                 var delimiterHBox = new HBox();
                 delimiterHBox.setSpacing(5);
 
-                var delimiterCharTextField = new TextField();
-                delimiterCharTextField.setMaxSize(30, 30);
-                delimiterCharTextField.setText(CSVFile.getFieldDelimiter());
-                delimiterCharTextField.setEditable(true);
-
-                delimiterHBox.getChildren().addAll(downloadButton, new Text("Separated by "), delimiterCharTextField);
+                delimiterHBox.getChildren().addAll(new Text(" Zoom : " + Math.round(value * 100 / 12) + " %"),
+                        minusButton, plusButton, resetZoom);
 
                 loadingTime = Double.parseDouble(String.format("%.2f", (System.nanoTime() - startTime) / 1e9));
                 Label choice = new Label(
@@ -218,12 +220,16 @@ public class HelloApplication extends Application {
                                 + " Kb loaded in " + loadingTime + " s");
                 choice.setFont(Font.font(16));
 
+                Label credit=new Label("Made by:");
+                credit.setFont(Font.font(14));
+
                 var creditsHbox = new HBox();
                 creditsHbox.setSpacing(5);
-                creditsHbox.getChildren().addAll(new Text("Made by:"), hyperlink);
+                creditsHbox.getChildren().addAll(credit, hyperlink);
 
                 TextField searchField = new TextField();
                 searchField.setPromptText("Search...");
+                searchField.setOnKeyTyped(e -> searchField.setPrefWidth(Math.min(searchField.getText().length()*6.2+16,202)));
 
                 // Add a button to trigger the search
                 Button searchButton = new Button("Search");
@@ -231,18 +237,19 @@ public class HelloApplication extends Application {
 
                 var searchHBox = new HBox();
                 searchHBox.setSpacing(5);
-                searchHBox.getChildren().addAll(searchField, searchButton);
+                searchHBox.getChildren().addAll(searchField, searchButton,downloadButton);
 
                 var smallPortionVBox = new VBox();
                 smallPortionVBox.setStyle("-fx-background-color: #f0f0f0;");
-                smallPortionVBox.getChildren().addAll(choice, miniHBox, hBoxLineNumber, delimiterHBox, creditsHbox,
-                        searchHBox);
+                smallPortionVBox.getChildren().addAll(choice, miniHBox, delimiterHBox,
+                        searchHBox, hBoxLineNumber, creditsHbox);
                 smallPortionVBox.setAlignment(Pos.TOP_LEFT);
                 smallPortionVBox.setTranslateY(-25);
                 smallPortionVBox.setSpacing(5);
 
                 var smallBackgroundVBox = new VBox();
-                smallBackgroundVBox.setMinSize(HelloApplication.getChangingStage().getWidth(), HelloApplication.getChangingStage().getHeight());
+                smallBackgroundVBox.setMinSize(HelloApplication.getChangingStage().getWidth(),
+                        HelloApplication.getChangingStage().getHeight());
                 smallBackgroundVBox.setTranslateX(smallPortionVBox.getTranslateX());
                 smallBackgroundVBox.setStyle("-fx-background-color: #f0f0f0;");
 
@@ -264,7 +271,8 @@ public class HelloApplication extends Application {
                         Number new_val) -> {
                     CSVFile.changeWidth(heightSlider.getValue());
                     secondVbox.setTranslateX(
-                            heightSlider.getValue() - HelloApplication.getChangingStage().getWidth() * RATIO_CONTENT_TO_WINDOW);
+                            heightSlider.getValue()
+                                    - HelloApplication.getChangingStage().getWidth() * RATIO_CONTENT_TO_WINDOW);
                 });
 
                 HBox hBox = new HBox();
@@ -272,7 +280,8 @@ public class HelloApplication extends Application {
                 root.getChildren().addAll(hBox);
 
                 CSVFile.resetWidth(HelloApplication.getChangingStage().getWidth() / CSVFile.getDesiredWidth());
-                Scene scene = new Scene(root, CSVFile.getDesiredWidth(), HelloApplication.getChangingStage().getHeight());
+                Scene scene = new Scene(root, CSVFile.getDesiredWidth(),
+                        HelloApplication.getChangingStage().getHeight());
                 scene.setOnKeyPressed((event) -> {
                     if (!iJustPressedAkey) {
                         if (event.getCode() == KeyCode.ESCAPE)

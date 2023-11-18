@@ -1,6 +1,7 @@
 package com.example.csvfiledisplay;
 
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.StackPane;
@@ -20,7 +21,9 @@ class TaskAnimation implements Runnable {
             var vBox = new StackPane();
             vBox.getChildren().add(pb);
             vBox.setPrefSize(200, 200);
+            Platform.runLater(() -> {
             HelloApplication.getChangingStage().setScene(new Scene(vBox));
             HelloApplication.getChangingStage().show();
+            });
     }
 }
