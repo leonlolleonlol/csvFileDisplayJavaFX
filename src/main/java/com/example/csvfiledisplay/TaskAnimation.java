@@ -7,7 +7,7 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.StackPane;
 
 class TaskAnimation implements Runnable {
-    ProgressIndicator pb = new ProgressIndicator();
+    private ProgressIndicator pb = new ProgressIndicator();
 
     @Override
     public void run() {
@@ -18,12 +18,12 @@ class TaskAnimation implements Runnable {
             }
         };
         timer.start();
-            var vBox = new StackPane();
-            vBox.getChildren().add(pb);
-            vBox.setPrefSize(200, 200);
-            Platform.runLater(() -> {
+        var vBox = new StackPane();
+        vBox.getChildren().add(pb);
+        vBox.setPrefSize(200, 200);
+        Platform.runLater(() -> {
             HelloApplication.getChangingStage().setScene(new Scene(vBox));
             HelloApplication.getChangingStage().show();
-            });
+        });
     }
 }

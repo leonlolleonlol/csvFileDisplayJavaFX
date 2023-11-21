@@ -26,8 +26,6 @@ public class CSVFile {
     private static ObservableList<Record> dataList;
     private static int numberOfColumns, desiredWidth;
     private static ArrayList<String> header;
-    private static final char[] chars="abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPRSTUVWXYZ".toCharArray();
-    private static final ArrayList<Character> acceptableChars=new ArrayList<Character>();
     private static TableColumn<Record, String>[] columns;
     private static double cellSize = 25, fontSize = 12;
     private static String lastChoice, fontSizeString = "-fx-font-size: " + fontSize + ";", fieldDelimiter = ",",
@@ -35,8 +33,6 @@ public class CSVFile {
     private static Charset charset = UTF_8;
 
     public CSVFile(String file, double screenSize, String forcedDelimiter) throws IOException {
-        for(char a:chars)
-            acceptableChars.add(a);
         overrideDelimiter = forcedDelimiter;
         lastChoice = file;
         dataList = FXCollections.observableArrayList();
@@ -159,8 +155,8 @@ public class CSVFile {
             if (firstFields != null) {
                 String[] fields = new String[numberOfColumns];
                 for (int i = 0; i < firstFields.length; i++)
-                    while (firstFields[i] != null && firstFields[i].length() > 2 && !acceptableChars.contains(firstFields[i].charAt(0))
-                            && !acceptableChars.contains(firstFields[i].charAt(firstFields[i].length() - 1)))
+                    while (firstFields[i] != null && firstFields[i].length() > 2 && !HelloApplication.getAcceptablechars().contains(firstFields[i].charAt(0))
+                            && !HelloApplication.getAcceptablechars().contains(firstFields[i].charAt(firstFields[i].length() - 1)))
                         firstFields[i] = firstFields[i].substring(1, firstFields[i].length() - 1);
                 if (firstFields.length < numberOfColumns)
                     for (int i = 0; i < numberOfColumns; i++) {

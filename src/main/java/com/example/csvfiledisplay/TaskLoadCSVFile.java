@@ -4,7 +4,7 @@ import java.io.IOException;
 
 
 class TaskLoadCSVFile implements Runnable {
-
+    private final static CSVFile firstCsv=null;
     @Override
     public void run() {
             try {
@@ -14,4 +14,8 @@ class TaskLoadCSVFile implements Runnable {
                 e.printStackTrace();
             }
     }
+    public static CSVFile getFirstcsv() {
+        return firstCsv;
+    }
+    
 }

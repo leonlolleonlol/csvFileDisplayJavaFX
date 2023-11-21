@@ -2,6 +2,7 @@ package com.example.csvfiledisplay;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -41,9 +42,13 @@ public class HelloApplication extends Application {
     private static int antiSpamRestarts = 0, numberOfImports = 0;
     private static long startTime;
     private static Stage primarStage;
+    private static final char[] chars="abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPRSTUVWXYZ".toCharArray();
+    private static final ArrayList<Character> acceptableChars=new ArrayList<Character>();
 
     @Override
     public void start(Stage primaryStage) throws IOException {
+        for(char c:chars)
+            acceptableChars.add(c);
         hyperlink.setFont(Font.font(14));
         primarStage = primaryStage;
         primaryStage.setMaximized(true);
@@ -389,5 +394,9 @@ public class HelloApplication extends Application {
 
     public static double getLoadingTime() {
         return loadingTime;
+    }
+
+    public static ArrayList<Character> getAcceptablechars() {
+        return acceptableChars;
     }
 }
